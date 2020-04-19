@@ -12,7 +12,7 @@
      & PROPS(NPROPS),COORDS(3),DROT(3,3),DFGRD0(3,3),DFGRD1(3,3)
 
       PARAMETER(TOLER=1.0D-6,PI=180,YOUNG=70300D0,POISSON=0.3D0)
-      DOUBLE PRECISION val,lame,shearMod,DOUBLEBUF
+      DOUBLE PRECISION val,lame,shearMod
 
 !initialize DDSDDE
       lame = YOUNG * POISSON / ((1 - 2 * POISSON) * (1 + POISSON))
@@ -30,11 +30,9 @@
       
 !update STRESS
       DO i=1,NTENS
-        DOUBLEBUF = 0.0D0
         DO j=1,NTENS
-          DOUBLEBUF = DOUBLEBUF + DDSDDE(i,j) * DSTRAN(j)
+          STRESS(i) = STRESS(i) + DDSDDE(i,j) * DSTRAN(j)
         ENDDO
-        STRESS(i) = STRESS(i) + DOUBLEBUF
       ENDDO
 
       val = 5.0D0
