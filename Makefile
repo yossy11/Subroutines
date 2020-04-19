@@ -6,7 +6,7 @@ LDFLAGS=-lm
 
 all: debug
 
-TARGETS=test
+TARGETS=Subroutine
 DEBUG_TARGETS=$(TARGETS:%=Debug/%)
 
 debug:Debug $(DEBUG_TARGETS)
@@ -17,7 +17,7 @@ Debug:
 Debug/%.o : src/%.for
 	$(CXX) -c $< -o $@
 
-OBJS1=test.o
+OBJS1=Subroutine.o
 Debug/test : $(OBJS1:%=Debug/%)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
