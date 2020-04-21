@@ -26,3 +26,7 @@ EELAS、EPLAS、ETOTAL、AⅠ、AⅠⅠ、EQPLAS
 
 アップデートするもの
 ひずみ増分
+
+DSTRESS...トライアルストレスとステップ開始時のステップの差分
+PSTRESS...トライアルストレス
+PBSTRESS...背応力コミのトライアルストレス
