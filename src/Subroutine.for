@@ -39,19 +39,15 @@
       CALL ROTSIG(STATEV(NTENS+1), DROT, pStrain, 2, NDI, NSHR)
       CALL ROTSIG(STATEV(2*NTENS+1), DROT, backStress1, 1, NDI, NSHR)
       CALL ROTSIG(STATEV(3*NTENS+1), DROT, backStress2, 1, NDI, NSHR)
-
-      DO i=1,NTENS
-        backStressTotal(i) = backStress1(i) + backStress2(i)
-      ENDDO
-
+      backStressTotal = backStress1 + backStress2
       eqpStrain = STATEV(4*NTENS+1)
-      
+      eStrain = eStrain + DSTRAN
+
       !calculate trial stress
       DO i=1,NTENS
         DO j=1,NTENS
           STRESS(i) = STRESS(i) + DDSDDE(i,j) * DSTRAN(j)
         ENDDO
-        eStrain(i) = eStrain(i) + DSTRAN(i)
       ENDDO
 
       ! ToDo: calculate eqStress and yieldStress
@@ -76,12 +72,10 @@
      & backStress2,eqpStrain
       DIMENSION STATEV(4*NTENS+1),eStrain(NTENS),pStrain(NTENS),
      & backStress1(NTENS),backStress2(NTENS)
-      DO i=1, NTENS
-        STATEV(i)=eStrain(i)
-        STATEV(NTENS+i)=pStrain(i)
-        STATEV(2*NTENS+i)=backStress1(i)
-        STATEV(3*NTENS+i)=backStress2(i)
-      END DO
+      STATEV(1:NTENS)=eStrain
+      STATEV(NTENS+1:2*NTENS)=pStrain
+      STATEV(2*NTENS+1:3*NTENS)=backStress1
+      STATEV(3*NTENS+1:4*NTENS)=backStress2
       STATEV(4*NTENS+1)=eqpStrain
       RETURN
       END SUBROUTINE updateSTATEV
