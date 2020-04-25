@@ -1228,7 +1228,6 @@ c
       CNBLFM=MAFM-NBLFM2+NBLFM3
 C**************************************  CNBLFM
       CNBL=CNBLFZ/CNBLFM
-C      write(7,*),'cnbl',CNBL
 CCCCC--------------------------------------------------CCCCCC
 ****************           UPDATE            **************** 
 CCCCC--------------------------------------------------CCCCCC
@@ -1266,7 +1265,6 @@ C**************************************  STRES*******
           DSTRES(K1)=-(A11AA(K1)+A13BBI(K1)+A14BBII(K1))-
      1 (A11DDGDDS(K1)+A13HI(K1)+A14HII(K1))*CNBL
       ENDDO
-C      write(7,*),'DSTRES1',DSTRES(1)
 c      
       DO K1=1,NTENS   
           KSTRESS(K1)=KSTRESS(K1)+DSTRES(K1)  
@@ -1295,10 +1293,8 @@ c        IF(FK.LT.(TOLER+PHI(KK))*YIELDK) GOTO 100
 C       
 C************************************************************       
 C     WITH THE DO KNEWTONS    
-C       WRITE(7,*),'**********************k',KNEWTON
       ENDDO
 C    
-C       WRITE(6,*),KK
 C    AFTER NEWTON INTERATION  IF NOT CONVERGE 
        WRITE(7,2)NEWTON,FC
 2     FORMAT(//,'***WARNING-PLASTICITY ALGORITHM DID NOT
@@ -1330,7 +1326,6 @@ C
 C	     EPLAS(K1)=EPLAS(K1)+DNBL*DDGDDS(K1)
 		 EELAS(K1)=EELAS(K1)-DNBL*DDGDDS(K1)
 53    CONTINUE
-C      WRITE(6,*),'EQPLAS',EQPLAS
 C       
              
 C***
@@ -1587,7 +1582,6 @@ C
         dx4=dsqrt(dx(1)**2+dx(2)**2+dx(3)**2+dx(4)**2)
 	  if (dx4<tol) exit
 c	  if (dx4<tol) exit 
-!    write(11,*),'dx4',dx4
 !------
         END DO
         END SUBROUTINE solve
@@ -1676,7 +1670,6 @@ C
      5 mm*(abs(x(1)/4+x(2)/4-(x(4)**2/4+(x(1)-x(2))**2/144)**(1/2)))**
      6 (mm-2)*(x(1)/4+x(2)/4-(x(4)**2/4+(x(1)-x(2))**2/144)**(1/2)))/
      7 (4*(x(4)**2/4+(x(1)-x(2))**2/144)**(1/2))
-! write(11,*),'df in jac',df
 
       END SUBROUTINE jac
 
@@ -1780,7 +1773,6 @@ C
 C
         dw4=dsqrt(dw(1)**2+dw(2)**2+dw(3)**2+dw(4)**2)
 	  if (dw4<tol) exit 
-!    write(11,*),'dx4',dx4
 !------
         END DO
         END SUBROUTINE solveAH
@@ -1798,7 +1790,6 @@ C
       R3=2*(3**mm)*(s00/sb)**(mm-1)*(hard0*sb-hardb*s00)/(sb**2)
       R4=2*(s00/s45)**(mm-1)*(hard0*s45-hard45*s00)/(s45**2)
       TT=dsqrt(((aa-bb)/12)**2+(hh/2)**2)
-c      write(*,*),mm,s00,aa,hard0,R1,R4,TT 
 
        f(1)=(bb-cc)*(abs(bb-cc))**(mm-2)*(w(2)-w(3))+(2*bb+cc)*
      1 (abs(2*bb+cc))**(mm-2)*(2*w(2)+w(3))+(bb+2*cc)*

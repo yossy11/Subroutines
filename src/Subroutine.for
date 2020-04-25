@@ -13,22 +13,22 @@
      & PROPS(NPROPS),COORDS(3),DROT(3,3),DFGRD0(3,3),DFGRD1(3,3)
 
       ! define constants
-      PARAMETER(TOLER=1.0D-6,PI=180,YOUNG=70300D0,POISSON=0.3)
+      ! ToDo: separate params to props
+      PARAMETER(TOLER=1.0D-6,PI=180,YOUNG=7.03D4,POISSON=0.3D0,HARDK=615.3D0,HARDN=0.363D0,HARDSTRAIN0=7.61D-3,m=2)
 
       ! define variables, and their dimensions
-      DOUBLE PRECISION lame,shearMod,eStrain,pStrain,backStress1,
-     & backStress2,backStressTotal,eqStress,eqpStrain
+      DOUBLE PRECISION lame,shearMod,eStrain,pStrain,eqPStrain,eqStress,
+     & effectiveStress,yldT,yldCPrime,yldCDbPrime,yldPhi
 
-      DIMENSION eStrain(NTENS),pStrain(NTENS),backStress1(NTENS),
-     & backStress2(NTENS),backStressTotal(NTENS)
+      DIMENSION eStrain(NTENS),pStrain(NTENS)
 
       ! initialize DDSDDE
-      lame = YOUNG * POISSON / ((1 - 2 * POISSON) * (1 + POISSON))
-      shearMod = YOUNG / (2 * (1 + POISSON))
-      DDSDDE = 0
+      lame = YOUNG*POISSON/((1 - 2*POISSON)*(1 + POISSON))
+      shearMod = YOUNG/(2*(1 + POISSON))
+      DDSDDE(:,:) = 0
       DDSDDE(1:NDI,1:NDI) = lame
       DO i=1,NDI
-        DDSDDE(i,i) = lame + 2 * shearMod
+        DDSDDE(i,i) = lame + 2*shearMod
       ENDDO
       DO i=NDI+1,NTENS
         DDSDDE(i,i) = shearMod
@@ -37,45 +37,63 @@
       ! read STATEV
       CALL ROTSIG(STATEV(1), DROT, eStrain, 2, NDI, NSHR)
       CALL ROTSIG(STATEV(NTENS+1), DROT, pStrain, 2, NDI, NSHR)
-      CALL ROTSIG(STATEV(2*NTENS+1), DROT, backStress1, 1, NDI, NSHR)
-      CALL ROTSIG(STATEV(3*NTENS+1), DROT, backStress2, 1, NDI, NSHR)
-      backStressTotal = backStress1 + backStress2
-      eqpStrain = STATEV(4*NTENS+1)
-      eStrain = eStrain + DSTRAN
+      eqPStrain = STATEV(2*NTENS+1)
+      eStrain(:) = eStrain(:) + DSTRAN(:)
 
-      !calculate trial stress
+      ! calculate trial stress
       DO i=1,NTENS
         DO j=1,NTENS
-          STRESS(i) = STRESS(i) + DDSDDE(i,j) * DSTRAN(j)
+          STRESS(i) = STRESS(i) + DDSDDE(i,j)*DSTRAN(j)
         ENDDO
       ENDDO
 
-      ! ToDo: calculate eqStress and yieldStress
+      ! calculate eqStress and effectiveStress
+      yldT(:,:) = 0.0D0
+      yldT(1:NDI,1:NDI) = -1.0D0
+      DO i=1,NDI
+        yldT(i,i) = 2.0D0
+      ENDDO
+      DO i=NDI+1,NTENS
+        yldT(i,i) = 3.0D0
+      ENDDO
+      yldT(:,:) = yldT(:,:)/3.0D0
+      yldCPrime(:,:) = 0.0D0
+      yldCDbPrime(:,:) = 0.0D0
 
-      IF ((eqStress - yieldStress) .LT. TOLER) THEN
-        call updateSTATEV(NTENS,STATEV,eStrain,pStrain,backStress1,
-     &   backStress2,eqpStrain)
+      ! ToDo: optimize C(minimize error function)
+
+      yldSPrime = MATMUL(yldCPrime,MATMUL(yldT,STRESS))
+      yldSDbPrime = MATMUL(yldCDbPrime,MATMUL(yldT,STRESS))
+      ! ToDo: check the result of SPRINC
+      CALL SPRINC(yldSPrime, yldSPriPrime, 1, NDI, NSHR)
+      CALL SPRINC(yldSDbPrime, yldSPriDbPrime, 1, NDI, NSHR)
+
+      DO i=1,3
+        DO j=1,3
+          yldPhi = yldPhi + ABS(yldSPriPrime(i) - yldSPriDbPrime(j))**m
+        ENDDO
+      ENDDO
+      
+      eqStress = (yldPhi/4)**(1/m)
+
+      effectiveStress = HARDK*((HARDSTRAIN0 + eqpStrain)**HARDN)
+      IF ((eqStress - effectiveStress) < TOLER) THEN
+        CALL updateSTATEV(NTENS,STATEV,eStrain,pStrain,eqpStrain)
         RETURN
       ENDIF
-
+      
       ! ToDo: if yield
 
-      call updateSTATEV(NTENS,STATEV,eStrain,pStrain,backStress1,
-     & backStress2,eqpStrain)
+      CALL updateSTATEV(NTENS,STATEV,eStrain,pStrain,eqpStrain)
       RETURN
       END
-      
 
-      SUBROUTINE updateSTATEV(NTENS,STATEV,eStrain,pStrain,
-     & backStress1,backStress2,eqpStrain)
-      DOUBLE PRECISION NTENS,STATEV,eStrain,pStrain,backStress1,
-     & backStress2,eqpStrain
-      DIMENSION STATEV(4*NTENS+1),eStrain(NTENS),pStrain(NTENS),
-     & backStress1(NTENS),backStress2(NTENS)
+      ! update all state variable
+      SUBROUTINE updateSTATEV(NTENS,STATEV,eStrain,pStrain,eqpStrain)
+      DOUBLE PRECISION NTENS,STATEV,eStrain,pStrain,eqpStrain
+      DIMENSION STATEV(4*NTENS+1),eStrain(NTENS),pStrain(NTENS)
       STATEV(1:NTENS)=eStrain
       STATEV(NTENS+1:2*NTENS)=pStrain
-      STATEV(2*NTENS+1:3*NTENS)=backStress1
-      STATEV(3*NTENS+1:4*NTENS)=backStress2
-      STATEV(4*NTENS+1)=eqpStrain
+      STATEV(2*NTENS+1)=eqpStrain
       RETURN
       END SUBROUTINE updateSTATEV
