@@ -1295,6 +1295,7 @@ C************************************************************
 C     WITH THE DO KNEWTONS    
       ENDDO
 C    
+C       WRITE(6,*),KK
 C    AFTER NEWTON INTERATION  IF NOT CONVERGE 
        WRITE(7,2)NEWTON,FC
 2     FORMAT(//,'***WARNING-PLASTICITY ALGORITHM DID NOT
@@ -1497,41 +1498,31 @@ C**************************************************************
       MODULE m_gauss
       CONTAINS
       SUBROUTINE lineq(A,b,x,N)
-      integer::i,k,N
-      integer::id_max 
-      DIMENSION A(N,N),b(N),x(N)
-      DIMENSION Aup(N,N),bup(N)
-      DOUBLE PRECISION A,b,x,Aup,bup
-C
-      DIMENSION Ab(N,N+1)
-      DIMENSION vtemp1(N+1),vtemp2(N+1)
-      DOUBLE PRECISION Ab,vtemp1,vtemp2
+      integer::i,k,N,id_max
+      DOUBLE PRECISION A(N,N),b(N),x(N),Aup(N,N),bup(N),Ab(N,N+1),
+     & vtemp1(N+1),vtemp2(N+1)
       Ab(1:N,1:N)=A
       Ab(:,N+1)=b
       DO k=1,N-1
-      elmax=dabs(Ab(k,k))
-      id_max=k 
-C
-	   DO i=k+1,n
-         IF (dabs(Ab(i,k))>elmax) THEN
-         elmax=Ab(i,k)
-         id_max=i
-         END IF          
-         END DO
-C
-      vtemp1=Ab(k,:)
-      vtemp2=Ab(id_max,:)
-      Ab(k,:)=vtemp2
-      Ab(id_max,:)=vtemp1   
-!#########################################################
-          DO i=k+1,N
+        elmax=dabs(Ab(k,k))
+        id_max=k 
+	      DO i=k+1,n
+          IF (dabs(Ab(i,k))>elmax) THEN
+            elmax=Ab(i,k)
+            id_max=i
+          ENDIF          
+        ENDDO
+        vtemp1=Ab(k,:)
+        vtemp2=Ab(id_max,:)
+        Ab(k,:)=vtemp2
+        Ab(id_max,:)=vtemp1   
+        DO i=k+1,N
           temp=Ab(i,k)/Ab(k,k)
           Ab(i,:)=Ab(i,:)-temp*Ab(k,:)
-         END DO
-      END DO
+        ENDDO
+      ENDDO
       Aup(:,:)=Ab(1:N,1:N)
       bup(:)=Ab(:,N+1)
-C
       call uptri(Aup,bup,x,n)
       END SUBROUTINE lineq
 

@@ -1,4 +1,4 @@
-!This is sample UMAT subroutine made by yossy11, on 20200419
+      ! This is sample UMAT subroutine made by yossy11, on 20200419
       SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,RPL,DDSDDT,
      & DRPLDE,DRPLDT,STRAN,DSTRAN,TIME,DTIME,TEMP,DTEMP,PREDEF,DPRED,
      & CMNAME,NDI,NSHR,NTENS,NSTATV,PROPS,NPROPS,COORDS,DROT,PNEWDT,
@@ -14,10 +14,10 @@
       PARAMETER(TOLER=1.0D-6,PI=180,YOUNG=70300D0,POISSON=0.3D0)
       DOUBLE PRECISION val,lame,shearMod
 
-!initialize DDSDDE
+      ! initialize DDSDDE
       lame = YOUNG * POISSON / ((1 - 2 * POISSON) * (1 + POISSON))
       shearMod = YOUNG / (2 * (1 + POISSON))
-      DDSDDE = 0
+      DDSDDE(:,:) = 0.0D0
       DO i=1,NDI
         DO j=1,NDI
           DDSDDE(i,j) = lame
@@ -28,12 +28,8 @@
         DDSDDE(i,i) = shearMod
       ENDDO
       
-!update STRESS
-      DO i=1,NTENS
-        DO j=1,NTENS
-          STRESS(i) = STRESS(i) + DDSDDE(i,j) * DSTRAN(j)
-        ENDDO
-      ENDDO
+      ! update STRESS
+      STRESS(:) = STRESS(:) + MATMUL(DDSDDE,DSTRAN)
 
       val = 5.0D0
       val = testFunc(.FALSE.,val)
