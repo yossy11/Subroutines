@@ -14,7 +14,6 @@
      & STRAN(NTENS),DSTRAN(NTENS),TIME(2),PREDEF(1),DPRED(1),
      & PROPS(NPROPS),COORDS(3),DROT(3,3),DFGRD0(3,3),DFGRD1(3,3)
 
-      
       ! define variables, and their dimensions
       CHARACTER(5) orientations(6)
       INTEGER i
@@ -30,13 +29,11 @@
       PARAMETER(TOLER=1.0D-6,YOUNG=7.03D4,POISSON=0.3D0,HARDK=615.3D0,
      & HARDN=0.363D0,HARDSTRAIN0=7.61D-3,YLDM=6)
 
-
       ! this subroutine can be used only on the condition of NDI=NSHR=3
       IF (NDI/=3 .or. NSHR/=3) THEN
         WRITE(6,*) 'invalid element type, please check about that'
         CALL XIT
       END IF
-
 
       ! initialize DDSDDE
       lame = YOUNG*POISSON/((1.0D0 - 2.0D0*POISSON)*(1.0D0 + POISSON))
@@ -209,6 +206,7 @@
       END FUNCTION calc_eqStress
 
 
+      ! calculate equivalent stress with plastic potential G
       DOUBLE PRECISION FUNCTION calc_eqGStress(hillParams,STRESS)
       IMPLICIT NONE
       DOUBLE PRECISION hillParams(4),STRESS(6)
@@ -218,7 +216,6 @@
      & SUM(STRESS(4:6)**2)))/(SUM(hillParams(1:3))))
       RETURN
       END FUNCTION calc_eqGStress
-
 
 
       ! calculate effective stress
@@ -242,7 +239,6 @@
       STATEV(2*NTENS+1)=eqpStrain
       RETURN
       END SUBROUTINE updateSTATEV
-
 
 
       ! calculate differential dPhi/dX e.g. dPhi/dSzz
@@ -411,6 +407,7 @@
       END FUNCTION calc_dPhidX
 
 
+      ! calculate differential of plastic potential
       SUBROUTINE calc_dGdS(hillParams,STRESS,dGdS)
       IMPLICIT NONE
       INTEGER i
@@ -428,6 +425,7 @@
       END SUBROUTINE calc_dGdS
 
 
+      ! calculate second differential of plastic potential
       SUBROUTINE calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
       IMPLICIT NONE
       DOUBLE PRECISION hillParams(4),STRESS(6),dGdS(6),ddGddS(6,6)
