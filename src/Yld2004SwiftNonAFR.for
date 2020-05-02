@@ -1,12 +1,10 @@
-      ! This is UMAT subroutine made by yossy11,using YLD2004-18p,Swift,non-AFR
+      ! This is UMAT subroutine made by yossy11, using YLD2004-18p, Swift, non-AFR
       ! Umat interface
       SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,RPL,DDSDDT,
      & DRPLDE,DRPLDT,STRAN,DSTRAN,TIME,DTIME,TEMP,DTEMP,PREDEF,DPRED,
      & CMNAME,NDI,NSHR,NTENS,NSTATV,PROPS,NPROPS,COORDS,DROT,PNEWDT,
      & CELENT,DFGRD0,DFGRD1,NOEL,NPT,LAYER,KSPT,KSTEP,KINC)
 
-      IMPLICIT NONE
-   
       INCLUDE 'ABA_PARAM.INC'
       CHARACTER*80 CMNAME
       DIMENSION STRESS(NTENS),STATEV(NSTATV),
@@ -18,12 +16,12 @@
       CHARACTER(5) orientations(6)
       INTEGER i
       DOUBLE PRECISION TOLER,YOUNG,POISSON,HARDK,HARDN,HARDSTRAIN0,YLDM,
-     & lame,shearMod,invDDSDDE(6,6),eStrain(6),pStrain(6),eqPStrain,
-     & totalStrain,yldCPrime(6,6),yldCDbPrime(6,6),eqStress,
-     & effectiveStress,calc_eqStress,calc_EffectiveStress,dfdS,
-     & calc_dPhidX,eqGStress,calc_eqGStress,dLambda,invA(7,7),A(7,7),
-     & dpStrain(6),updatedSS(7),x(7),y(7),dFS(6),dFeqpStrain,dF(7),
-     & ddLambda
+     & lame,shearMod,invDDSDDE(6,6),eStrain(6),pStrain(6),eqpStrain,
+     & totalStrain(6),yldCPrime(6,6),yldCDbPrime(6,6),hillParams(4),
+     & eqStress,effectiveStress,calc_eqStress,calc_EffectiveStress,
+     & dfdS(6),calc_dPhidX,dGdS(6),ddGddS(6,6),eqGStress,calc_eqGStress,
+     & dLambda,invA(7,7),A(7,7),dpStrain(6),updatedSS(7),x(7),y(7),
+     & dFS(6),dFeqpStrain,dF(7),ddLambda
 
       ! define constants
       PARAMETER(TOLER=1.0D-6,YOUNG=7.03D4,POISSON=0.3D0,HARDK=615.3D0,
@@ -56,7 +54,7 @@
       ! calculate trial stress
       STRESS(:) = STRESS(:) + MATMUL(DDSDDE,DSTRAN)
 
-      ! calculate eqStress and effectiveStress
+      ! anisotropic params
       yldCPrime(:,:) = 0.0D0
       yldCPrime(5,5) = 1.0D0
       yldCPrime(6,6) = 1.0D0
@@ -85,13 +83,14 @@
       hillParams(3) = 7.3796284912348674D-5
       hillParams(4) = 1.0D0
 
+      ! calculate eqStress and effectiveStress
       eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
       effectiveStress = 
      & calc_EffectiveStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
 
       ! if not yield
       IF ((eqStress - effectiveStress) < effectiveStress*TOLER) THEN
-        CALL updateSTATEV(NTENS,STATEV,eStrain,pStrain,eqpStrain)
+        CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
         RETURN
       END IF
       
@@ -104,8 +103,8 @@
       CALL calc_dGdS(hillParams,STRESS,dGdS)
       CALL calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
       eqGStress = calc_eqGStress(hillParams,STRESS)
-      dLambda = MATMUL(dfdS,MATMUL(DDSDDE,DSTRAN))/
-     & (MATMUL(dfdS,MATMUL(DDSDDE,dGdS)) + HARDK*HARDN*
+      dLambda = DOT_PRODUCT(dfdS,MATMUL(DDSDDE,DSTRAN))/
+     & (DOT_PRODUCT(dfdS,MATMUL(DDSDDE,dGdS)) + HARDK*HARDN*
      & ((HARDSTRAIN0 + eqpStrain)**(HARDN-1.0D0))*eqGStress/eqStress)
       invA(:,:) = 0.0D0
       invA(7,7) = -1.0D0
@@ -144,7 +143,7 @@
         CALL calc_dGdS(hillParams,STRESS,dGdS)
       END DO
       ! ToDO: update DDSDDE
-      CALL updateSTATEV(NTENS,STATEV,eStrain,pStrain,eqpStrain)
+      CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
       RETURN
       END SUBROUTINE UMAT
 
@@ -229,14 +228,13 @@
 
 
       ! update all state variable
-      SUBROUTINE updateSTATEV(NTENS,STATEV,eStrain,pStrain,eqpStrain)
+      SUBROUTINE updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
       IMPLICIT NONE
-      INTEGER NTENS
-      DOUBLE PRECISION STATEV(2*NTENS+1),eStrain(NTENS),pStrain(NTENS)
-     & eqpStrain
-      STATEV(1:NTENS)=eStrain
-      STATEV(NTENS+1:2*NTENS)=pStrain
-      STATEV(2*NTENS+1)=eqpStrain
+      INTEGER NSTATV
+      DOUBLE PRECISION STATEV(NSTATV),eStrain(6),pStrain(6),eqpStrain
+      STATEV(1:6)=eStrain
+      STATEV(7:12)=pStrain
+      STATEV(13)=eqpStrain
       RETURN
       END SUBROUTINE updateSTATEV
 
@@ -428,7 +426,9 @@
       ! calculate second differential of plastic potential
       SUBROUTINE calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
       IMPLICIT NONE
-      DOUBLE PRECISION hillParams(4),STRESS(6),dGdS(6),ddGddS(6,6)
+      INTEGER i,j
+      DOUBLE PRECISION hillParams(4),STRESS(6),dGdS(6),ddGddS(6,6),
+     & eqGStress,calc_eqGStress
       eqGStress = calc_eqGStress(hillParams,STRESS)
       DO i=1,3
         DO j=1,6
