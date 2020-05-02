@@ -18,15 +18,13 @@
       lame = YOUNG * POISSON / ((1 - 2 * POISSON) * (1 + POISSON))
       shearMod = YOUNG / (2 * (1 + POISSON))
       DDSDDE(:,:) = 0.0D0
+      DDSDDE(1:NDI,1:NDI) = lame
       DO i=1,NDI
-        DO j=1,NDI
-          DDSDDE(i,j) = lame
-        ENDDO
-        DDSDDE(i,i) = lame + 2 * shearMod
-      ENDDO
+        DDSDDE(i,i) = lame + 2*shearMod
+      END DO
       DO i=NDI+1,NTENS
         DDSDDE(i,i) = shearMod
-      ENDDO
+      END DO
       
       ! update STRESS
       STRESS(:) = STRESS(:) + MATMUL(DDSDDE,DSTRAN)

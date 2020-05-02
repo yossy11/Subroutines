@@ -17,30 +17,36 @@
       PARAMETER(TOLER=1.0D-6,PI=180,YOUNG=7.03D4,POISSON=0.3D0,HARDK=615.3D0,HARDN=0.363D0,HARDSTRAIN0=7.61D-3,YLDM=2)
 
       ! define variables, and their dimensions
-      DOUBLE PRECISION lame,shearMod,eStrain(NTENS),pStrain(NTENS),
-     & eqPStrain,eqStress,effectiveStress,
-     & yldCPrime(NTENS,NTENS),yldCDbPrime(NTENS,NTENS),exStress(8),exLankford(8)
+      DOUBLE PRECISION lame,shearMod,eStrain(6),pStrain(6),eqPStrain,
+     & eqStress,effectiveStress,yldCPrime(6,6),yldCDbPrime(6,6),
+     & exStress(8),exLankford(8)
+
+      ! this subroutine can be used on the condition of NDI=NSHR=3
+      IF (NDI/=3 .or. NSHR/=3) THEN
+        WRITE(6,*) 'invalid element type, please check about that'
+        CALL XIT
+      END IF
 
       exStress(:) = PROPS(1:8)
       exLankford(:) = PROPS(9:16)
 
       ! initialize DDSDDE
-      lame = YOUNG*POISSON/((1 - 2*POISSON)*(1 + POISSON))
-      shearMod = YOUNG/(2*(1 + POISSON))
+      lame = YOUNG*POISSON/((1.0D0 - 2.0D0*POISSON)*(1.0D0 + POISSON))
+      shearMod = YOUNG/(2.0D0*(1.0D0 + POISSON))
       DDSDDE(:,:) = 0.0D0
-      DDSDDE(1:NDI,1:NDI) = lame
-      DO i=1,NDI
+      DDSDDE(1:3,1:3) = lame
+      DO i=1,3
         DDSDDE(i,i) = lame + 2*shearMod
+        DDSDDE(i+3,i+3) = shearMod
       END DO
-      DO i=NDI+1,NTENS
-        DDSDDE(i,i) = shearMod
-      END DO      
+      CALL calc_Inverse(6,DDSDDE,invDDSDDE)
 
       ! read STATEV
       CALL ROTSIG(STATEV(1), DROT, eStrain, 2, NDI, NSHR)
       CALL ROTSIG(STATEV(NTENS+1), DROT, pStrain, 2, NDI, NSHR)
       eqPStrain = STATEV(2*NTENS+1)
       eStrain(:) = eStrain(:) + DSTRAN(:)
+      totalStrain(:) = eStrain(:) + pStrain(:)
 
       ! calculate trial stress
       STRESS(:) = STRESS(:) + MATMUL(DDSDDE,DSTRAN)
@@ -59,8 +65,44 @@
         RETURN
       END IF
       
-      ! ToDo: if yield
+      ! if yield
+      ! calculate trial value of dfds,dsisodeqpstrain
+      CALL calc_dfdS(STRESS,dfdS)
+      CALL calc_dGdS(STRESS,dGdS)
+      CALL calc_ddGddS(STRESS,ddGddS)
+      eqStress = calc_eqStress(STRESS)
+      eqGStress = calc_eqGStress(STRESS)
+      dLambda = MATMUL(dfdS,MATMUL(DDSDDE,DSTRAN))/(MATMUL(dfdS,MATMUL(DDSDDE,dGdS)) + HARDK*HARDN*((HARDSTRAIN0 + eqpStrain)**(HARDN-1))*eqGStress/eqStress)
+      invA(:,:) = 0.0D0
+      invA(7,7) = -1.0D0
+      dPStrain = 0.0D0
+      updatedSS(:) = 0.0D0
 
+      DO WHILE ((eqStress - effectiveStress)>=effectiveStress*TOLER)
+        x(1:6) = dLambda*dGdS(:) - dpStrain
+        x(7) = dLambda*eqGStress/eqStress - updatedSS(7)
+        y(1:6) = dGdS(:)
+        y(7) = 1.0D0
+        invA(1:6,1:6) = invDDSDDE(:,:) + dLambda*ddGddS(:,:)
+        CALL calc_Inverse(6,invA,A)
+        CALL calc_dFS(dFS)
+        CALL calc_dFeqpStrain(dFeqpStrain)
+        dF(1:6) = dFS
+        dF(7) = dFeqpStrain
+        ddLambda =(eqStress - effectiveStress - DOT_PRODUCT(dF,MATMUL(A,x)))/DOT_PRODUCT(dF,MATMUL(A,y))
+        updatedSS = (-1.0D0)*(MATMUL(A,x) + ddLambda*MATMUL(A,y))
+        dpStrain = (-1.0D0)*MATMUL(invDDSDDE,updatedSS(1:6))
+        pStrain(:) = pStrain(:) + dpStrain(:)
+        eqpStrain = eqpStrain + updatedSS(7)
+        dLambda = dLambda + ddLambda
+        STRESS = STRESS + updatedSS(1:6)
+        eStrain(:) = totalStrain(:) - pStrain(:)
+        eqStress = calc_eqStress(STRESS)
+        eqGStress = calc_eqGStress(STRESS)
+        effectiveStress = HARDK*((HARDSTRAIN0 + eqpStrain)**HARDN)
+        CALL calc_dGdS(STRESS,dGDS)
+      END DO
+      ! ToDO: update DDSDDE
       CALL updateSTATEV(NTENS,STATEV,eStrain,pStrain,eqpStrain)
       RETURN
       END SUBROUTINE UMAT
@@ -79,12 +121,12 @@
 
 
       ! optimize yldCPrime and yldCDbPrime
-      SUBROUTINE optimizeYldC(NTENS,yldCPrime,yldCDbPrime)
+      SUBROUTINE optimize_yldC(NTENS,yldCPrime,yldCDbPrime)
       PARAMETER(learningRate=0.1D0,tol=1.0D-6)
       INTEGER NTENS,numIteration=50000
       DOUBLE PRECISION yldCPrime(NTENS,NTENS),yldCDbPrime(NTENS,NTENS),dCFactors(14)
       DO WHILE (errorFunc(YLDM,NDI,NSHR,yldCPrime,yldCDbPrime,exStress,exLankford)>tol)
-        CALl calcDCFactors(dCFactors)
+        CALL calcDCFactors(dCFactors)
         yldCPrime(1,2) = yldCPrime(1,2) - learningRate*dCFactors(1)
         yldCPrime(1,3) = yldCPrime(1,3) - learningRate*dCFactors(2)
         yldCPrime(2,1) = yldCPrime(2,1) - learningRate*dCFactors(3)
@@ -101,7 +143,7 @@
         yldCDbPrime(4,4) = yldCDbPrime(4,4) - learningRate*dCFactors(14)
       END DO
       RETURN
-      END SUBROUTINE optimizeYldC
+      END SUBROUTINE optimize_yldC
 
 
       ! error function for anisotropic params
@@ -140,7 +182,7 @@
 
 
       ! calculate equivalent stress
-      DOUBLE PRECISION FUNCTION calcEqStress(YLDM,NDI,NSHR,STRESS,yldCPrime,
+      DOUBLE PRECISION FUNCTION calc_eqStress(YLDM,NDI,NSHR,STRESS,yldCPrime,
      & yldCDbPrime)
       INTEGER YLDM,NDI,NSHR
       DOUBLE PRECISION STRESS(6),yldCPrime(6,6),
@@ -166,11 +208,17 @@
       END DO
       calcEqStress = (yldPhi/4.0D0)**(1/YLDM)
       RETURN
-      END FUNCTION calcEqStress
+      END FUNCTION calc_eqStress
+
+
+      ! calculate potential function
+      DOUBLE PRECISION FUNCTION calc_G()
+      RETURN
+      END FUNCTION calc_G
 
 
       ! calculate differential
-      DOUBLE PRECISION FUNCTION calcDPhiDSDev(orientation,YLDM,NDI,NSHR,
+      DOUBLE PRECISION FUNCTION calc_DPhiDSDev(orientation,YLDM,NDI,NSHR,
      & yldCPrime,yldCDbPrime,bufStress)
       yldT(:,:) = 0.0D0
       yldT(1:NDI,1:NDI) = -1.0D0
@@ -223,22 +271,22 @@
         dSTildeDSDevDbPrime(2) = -1.0D0*yldCDbPrime(2,3)
         dSTildeDSDevDbPrime(3) = 0.0D0
 
-      CASE ('c12')
+      CASE ('c12  ')
         dSTildeDSDevPrime(1) = -1.0D0*yldSPrime(2)
 
-      CASE ('c13')
+      CASE ('c13  ')
         dSTildeDSDevPrime(1) = -1.0D0*yldSPrime(3)
 
-      CASE ('c21')
+      CASE ('c21  ')
         dSTildeDSDevPrime(2) = -1.0D0*yldSPrime(1)
 
-      CASE ('c23')
+      CASE ('c23  ')
         dSTildeDSDevPrime(2) = -1.0D0*yldSPrime(3)
 
-      CASE ('c31')
+      CASE ('c31  ')
         dSTildeDSDevPrime(3) = -1.0D0*yldSPrime(1)
 
-      CASE ('c32')
+      CASE ('c32  ')
         dSTildeDSDevPrime(3) = -1.0D0*yldSPrime(2)
 
       CASE ('c12Db')
@@ -313,13 +361,14 @@
      &   yldSPriPrime(3))*(ABS(yldSPriDbPrime(i) - yldSPriPrime(3))**
      &   (YLDM - 2)))
       END DO
-      calcDPhiDSDev =  DOT_PRODUCT(dPhiDSPriPrime,dSPriDSDevPrime) + DOT_PRODUCT(dPhiDSPriDbPrime,dSPriDSDevDbPrime)
+      calc_DPhiDSDev =  DOT_PRODUCT(dPhiDSPriPrime,dSPriDSDevPrime) + DOT_PRODUCT(dPhiDSPriDbPrime,dSPriDSDevDbPrime)
       RETURN
-      END FUNCTION calcDPhiDSDev
+      END FUNCTION calc_DPhiDSDev
 
 
-      SUBROUTINE calcDCFactors(dCFactors)  
-      orientations = ['c12','c13','c21','c23','c31','c32','c44','c12Db','c13Db','c21Db','c23Db','c31Db','c32Db','c44Db']
+      SUBROUTINE calc_DCFactors(dCFactors)
+      CHARACTER(5) orientations(14)
+      orientations = ['c12  ','c13  ','c21  ','c23  ','c31  ','c32  ','c44  ','c12Db','c13Db','c21Db','c23Db','c31Db','c32Db','c44Db']
       DO i=1,6
         DO j=1,7
           bufStress(:) = 0.0D0
@@ -349,15 +398,41 @@
       dCFactors(7) = dCFactors(7) + WEIGHTB*2*dSDCPrime*((eqStress/exStress(8)) - 1)/exStress(8)
       dCFactors(14) = dCFactors(14) + WEIGHTB*2*dSDCDbPrime*((eqStress/exStress(8)) - 1)/exStress(8)
       RETURN
-      END SUBROUTINE calcDCFactors
+      END SUBROUTINE calc_DCFactors
 
 
       ! calculate invariants of stress tensor
-      SUBROUTINE calcInvariants(stress,invariants)
+      SUBROUTINE calc_Invariants(stress,invariants)
       DOUBLE PRECISION stress(6),invariants(2)
       invariants(1) = (stress(1) + stress(2) + stress(3))/3.0D0
       invariants(2) = (stress(4)**2 + stress(5)**2 + stress(6)**2 - 
      & stress(1)*stress(2) - stress(2)*stress(3) - 
      & stress(3)*stress(1))/3.0D0
       RETURN
-      END SUBROUTINE calcInvariants
+      END SUBROUTINE calc_Invariants
+
+
+      ! calculate inverse matrix
+      SUBROUTINE calc_Inverse(dim,mat,invMat)
+      INTEGER dim
+      DOUBLE PRECISION mat(dim,dim),invMat(dim,dim),bufMat(dim,dim),buf
+      bufMat(:,:) = mat(:,:)
+      invMat(:,:) = 0.0D0
+      DO i=1,dim
+        invMat(i,i) = 1.0D0
+      END DO
+      DO i=1,dim
+        buf = 1.0D0/mat(i,i)
+        mat(i,:) = mat(i,:)*buf
+        invMat(i,:) = invMat(i,:)*buf
+        DO j=1,dim
+          IF (i/=j) THEN
+            buf = mat(j,i)
+            mat(j,:) = mat(j,:) - mat(i,:)*buf
+            invMat(j,:) = invMat(j,:) - invMat(i,:)*buf
+          END IF
+        END DO
+      END DO
+      mat(:,:) = bufMat(:,:)
+      RETURN
+      END SUBROUTINE calc_Inverse
