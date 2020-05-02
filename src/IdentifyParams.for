@@ -189,12 +189,6 @@
       dSTildedXDbPrime(:) = 0.0D0
 
       SELECT CASE (orientation)
-      CASE ('sigxx')
-      CASE ('sigyy')
-      CASE ('sigzz')
-      CASE ('sigxy')
-      CASE ('sigxz')
-      CASE ('sigyz')
       CASE ('sxx  ')
         dSTildedXPrime(1) = 0.0D0
         dSTildedXPrime(2) = -1.0D0*yldCPrime(2,1)
