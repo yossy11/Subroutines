@@ -1,27 +1,28 @@
-      ! identify anisotropic params of yld2004-18p
+      ! identify anisotropic params of yld2004-18p,hill48
       PROGRAM IdentifyParams
       IMPLICIT NONE
       INTEGER YLDM,i
       DOUBLE PRECISION exStress(8),exLankford(8),yldCPrime(6,6),
-     & yldCDbPrime(6,6)
+     & yldCDbPrime(6,6),params(3)
       PARAMETER(YLDM=6)
-      exStress(1) = 115.796080569375
-      exStress(2) = 116.39694377773
-      exStress(3) = 112.821037305888
-      exStress(4) = 114.862943596084
-      exStress(5) = 115.045917778501
-      exStress(6) = 114.736215791944
-      exStress(7) = 118.906776179804
-      exStress(8) = 118.254840921828
+      exStress = 0.0D0
+      exStress(1) = 115.796080569375D0
+      exStress(2) = 116.39694377773D0
+      exStress(3) = 112.821037305888D0
+      exStress(4) = 114.862943596084D0
+      exStress(5) = 115.045917778501D0
+      exStress(6) = 114.736215791944D0
+      exStress(7) = 118.906776179804D0
+      exStress(8) = 118.254840921828D0
 
-      exLankford(1) = 0.69935
-      exLankford(2) = 0.70275
-      exLankford(3) = 0.7424
-      exLankford(4) = 0.77555
-      exLankford(5) = 0.78975
-      exLankford(6) = 0.7594
-      exLankford(7) = 0.7748
-      exLankford(8) = 1.112
+      exLankford(1) = 0.69935D0
+      exLankford(2) = 0.70275D0
+      exLankford(3) = 0.7424D0
+      exLankford(4) = 0.77555D0
+      exLankford(5) = 0.78975D0
+      exLankford(6) = 0.7594D0
+      exLankford(7) = 0.7748D0
+      exLankford(8) = 1.112D0
 
       yldCPrime(:,:) = 0.0D0
       yldCPrime(1:3,1:3) = 0.75D0
@@ -36,7 +37,8 @@
         yldCDbPrime(i,i) = 0.0D0
       END DO
       CALL optimize_yldC(YLDM,exStress,exLankford,yldCPrime,yldCDbPrime)
-      OPEN(20,FILE='anisotropicParams.csv')
+      CALL calc_Hill48Params(exStress,params)
+      OPEN(20,FILE='yld2004Params.csv')
       WRITE(20,*) 'yldCPrime'
       DO i=1,6
         WRITE(20,*) yldCPrime(i,:)
@@ -45,6 +47,10 @@
       DO i=1,6
         WRITE(20,*) yldCDbPrime(i,:)
       END DO
+      OPEN(30,FILE='hill48Params.csv')
+      WRITE(30,*) 'F= ',params(1)
+      WRITE(30,*) 'G= ',params(2)
+      WRITE(30,*) 'H= ',params(3)
       END PROGRAM IdentifyParams
 
 
@@ -440,4 +446,18 @@
      & stress(2)*(stress(5)**2) - stress(3)*(stress(4)**2))/2.0D0
       RETURN
       END SUBROUTINE calc_Invariants
+
+
+      SUBROUTINE calc_Hill48Params(exStress,params)
+      IMPLICIT NONE
+      DOUBLE PRECISION exStress(8),params(3)
+      params(1) = 1.0D0/exStress(7)**2 + 
+     & 1.0D0/exStress(8)**2 - 1.0D0/exStress(1)**2
+      params(2) = 1.0D0/exStress(8)**2 + 
+     & 1.0D0/exStress(1)**2 - 1.0D0/exStress(7)**2
+      params(3) = 1.0D0/exStress(1)**2 + 
+     & 1.0D0/exStress(7)**2 - 1.0D0/exStress(8)**2
+      RETURN
+      END SUBROUTINE calc_Hill48Params
+      
   
