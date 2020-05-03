@@ -3,7 +3,7 @@
       IMPLICIT NONE
       INTEGER YLDM,i
       DOUBLE PRECISION exStress(8),exLankford(8),yldCPrime(6,6),
-     & yldCDbPrime(6,6),params(3)
+     & yldCDbPrime(6,6),hillParams(8)
       PARAMETER(YLDM=6)
       exStress = 0.0D0
       exStress(1) = 115.796080569375D0
@@ -37,20 +37,7 @@
         yldCDbPrime(i,i) = 0.0D0
       END DO
       CALL optimize_yldC(YLDM,exStress,exLankford,yldCPrime,yldCDbPrime)
-      CALL calc_Hill48Params(exStress,params)
-      OPEN(20,FILE='yld2004Params.csv')
-      WRITE(20,*) 'yldCPrime'
-      DO i=1,6
-        WRITE(20,*) yldCPrime(i,:)
-      END DO
-      WRITE(20,*) 'yldCDbPrime'
-      DO i=1,6
-        WRITE(20,*) yldCDbPrime(i,:)
-      END DO
-      OPEN(30,FILE='hill48Params.csv')
-      WRITE(30,*) 'F= ',params(1)
-      WRITE(30,*) 'G= ',params(2)
-      WRITE(30,*) 'H= ',params(3)
+      !CALL calc_Hill48Params(exStress,exLankford,hillParams)
       END PROGRAM IdentifyParams
 
 
@@ -58,11 +45,11 @@
       SUBROUTINE optimize_yldC(YLDM,exStress,exLankford,yldCPrime,
      & yldCDbPrime)
       IMPLICIT NONE
-      INTEGER YLDM,iterationCount
+      INTEGER YLDM,iterationCount,i
       DOUBLE PRECISION exStress(8),exLankford(8),yldCPrime(6,6),
      & yldCDbPrime(6,6),LEARNINGRATE,TOL,WEIGHTS,WEIGHTR,WEIGHTB,
      & dCFactors(14),error,errorFunc
-      PARAMETER(LEARNINGRATE=0.1D0,TOL=1.0D-6,WEIGHTS=1.0D0,
+      PARAMETER(LEARNINGRATE=0.1D-3,TOL=1.0D-6,WEIGHTS=1.0D0,
      & WEIGHTR=1.0D-1,WEIGHTB=1.0D-2)
       dCFactors(:) = 1.0D0
       error = errorFunc(YLDM,WEIGHTS,WEIGHTR,WEIGHTB,
@@ -70,6 +57,7 @@
       DO WHILE (error>TOL)
         CALL calc_dCFactors(YLDM,WEIGHTS,WEIGHTR,WEIGHTB,exStress,
      &   exLankford,yldCPrime,yldCDbPrime,dCFactors)
+        dCFactors(:) = (-1.0D0)*dCFactors(:)
         yldCPrime(1,2) = yldCPrime(1,2) - LEARNINGRATE*dCFactors(1)
         yldCPrime(1,3) = yldCPrime(1,3) - LEARNINGRATE*dCFactors(2)
         yldCPrime(2,1) = yldCPrime(2,1) - LEARNINGRATE*dCFactors(3)
@@ -92,6 +80,15 @@
           WRITE(*,*) 'too many'
           EXIT
         END IF
+      END DO
+      OPEN(20,FILE='yld2004Params.csv')
+      WRITE(20,*) 'yldCPrime'
+      DO i=1,6
+        WRITE(20,*) yldCPrime(i,:)
+      END DO
+      WRITE(20,*) 'yldCDbPrime'
+      DO i=1,6
+        WRITE(20,*) yldCDbPrime(i,:)
       END DO
       RETURN
       END SUBROUTINE optimize_yldC
@@ -448,16 +445,34 @@
       END SUBROUTINE calc_Invariants
 
 
-      SUBROUTINE calc_Hill48Params(exStress,params)
+      SUBROUTINE calc_Hill48Params(exStress,exLankford,params)
       IMPLICIT NONE
-      DOUBLE PRECISION exStress(8),params(3)
+      DOUBLE PRECISION exStress(8),exLankford(8),params(8)
       params(1) = 1.0D0/exStress(7)**2 + 
      & 1.0D0/exStress(8)**2 - 1.0D0/exStress(1)**2
       params(2) = 1.0D0/exStress(8)**2 + 
      & 1.0D0/exStress(1)**2 - 1.0D0/exStress(7)**2
       params(3) = 1.0D0/exStress(1)**2 + 
      & 1.0D0/exStress(7)**2 - 1.0D0/exStress(8)**2
+      params(4) = (2.0D0/exStress(4))**2 - (1.0D0/exStress(8))**2
+      params(1:4) = params(1:4)*exStress(1)**2/2.0D0
+     
+      params(5) = exLankford(1)/(exLankford(7)*(1 + exLankford(1)))
+      params(6) = 1.0D0/(1.0D0 + exLankford(1))
+      params(7) = exLankford(1)/(1.0D0 + exLankford(1))
+      params(8) = 
+     & (exLankford(1) + exLankford(7))*(1.0D0 + exLankford(4))/
+     & (2.0D0*exLankford(7)*(1.0D0+exLankford(1)))
+      OPEN(30,FILE='hill48Params.csv')
+      WRITE(30,*) 'Stress'
+      WRITE(30,*) 'F= ',params(1)
+      WRITE(30,*) 'G= ',params(2)
+      WRITE(30,*) 'H= ',params(3)
+      WRITE(30,*) 'L=M=N= ',params(4)
+      WRITE(30,*) 'Deformation'
+      WRITE(30,*) 'F= ',params(5)
+      WRITE(30,*) 'G= ',params(6)
+      WRITE(30,*) 'H= ',params(7)
+      WRITE(30,*) 'L=M=N= ',params(8)
       RETURN
       END SUBROUTINE calc_Hill48Params
-      
-  

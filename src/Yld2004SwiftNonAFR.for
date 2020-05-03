@@ -21,7 +21,8 @@
      & eqStress,effectiveStress,calc_eqStress,calc_EffectiveStress,
      & dfdS(6),calc_dPhidX,dGdS(6),ddGddS(6,6),eqGStress,calc_eqGStress,
      & dLambda,invA(7,7),A(7,7),dpStrain(6),updatedSS(7),x(7),y(7),
-     & dFS(6),dFeqpStrain,dF(7),ddLambda
+     & dFS(6),dFeqpStrain,dF(7),ddLambda,numeratordLambda,
+     & denominatordLambda,dyadMat(6,6)
 
       ! define constants
       PARAMETER(TOLER=1.0D-6,YOUNG=7.03D4,POISSON=0.3D0,HARDK=615.3D0,
@@ -78,10 +79,10 @@
       yldCDbPrime(3,2) = 1.0D0
       yldCDbPrime(4,4) = 1.0D0
 
-      hillParams(1) = 6.7658220525116717D-5
-      hillParams(2) = 7.5360244229739524D-5
-      hillParams(3) = 7.3796284912348674D-5
-      hillParams(4) = 1.0D0
+      hillParams(1) = 0.45360550654844645
+      hillParams(2) = 0.50524270631786716
+      hillParams(3) = 0.49475729368213273
+      hillParams(4) = 1.5532035559766002
 
       ! calculate eqStress and effectiveStress
       eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
@@ -106,6 +107,15 @@
       dLambda = DOT_PRODUCT(dfdS,MATMUL(DDSDDE,DSTRAN))/
      & (DOT_PRODUCT(dfdS,MATMUL(DDSDDE,dGdS)) + HARDK*HARDN*
      & ((HARDSTRAIN0 + eqpStrain)**(HARDN-1.0D0))*eqGStress/eqStress)
+      
+      ! update states to trial step of N-R iteration
+      STRESS(:) = STRESS(:) - dLambda*MATMUL(DDSDDE,dGdS)
+      CALL calc_dGdS(hillParams,STRESS,dGdS)
+      CALL calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
+      eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
+      eqGStress = calc_eqGStress(hillParams,STRESS)
+      pStrain(:) = pStrain(:) + dLambda*dGdS(:)
+      eqpStrain = eqpStrain + dLambda*eqGStress/eqStress
       invA(:,:) = 0.0D0
       invA(7,7) = -1.0D0
       dpStrain = 0.0D0
@@ -142,7 +152,16 @@
      &   calc_EffectiveStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
         CALL calc_dGdS(hillParams,STRESS,dGdS)
       END DO
-      ! ToDO: update DDSDDE
+      DO i=1,6
+        dfdS(i) = 
+     &   calc_dPhidX(orientations(i),YLDM,yldCPrime,yldCDbPrime,STRESS)
+      END DO
+
+      ! update DDSDDE
+      numeratordLambda = DOT_PRODUCT(dfdS,MATMUL(DDSDDE,DSTRAN))
+      denominatordLambda = dLambda/numeratordLambda
+      CALL calc_dyad(6,MATMUL(DDSDDE,dGdS),MATMUL(dfdS,DDSDDE),dyadMat)
+      DDSDDE(:,:) = DDSDDE(:,:) - dyadMat(:,:)/denominatordLambda
       CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
       RETURN
       END SUBROUTINE UMAT
@@ -487,3 +506,17 @@
      & stress(2)*(stress(5)**2) - stress(3)*(stress(4)**2))/2.0D0
       RETURN
       END SUBROUTINE calc_Invariants
+
+
+      ! calculate dyad of vectors
+      SUBROUTINE calc_dyad(dim,vec1,vec2,mat)
+      IMPLICIT NONE
+      INTEGER dim,i,j
+      DOUBLE PRECISION vec1(dim),vec2(dim),mat(dim,dim)
+      DO i=1,dim
+        DO j=1,dim
+          mat(i,j) = vec1(i)*vec2(j)
+        END DO
+      END DO
+      RETURN
+      END SUBROUTINE calc_dyad
