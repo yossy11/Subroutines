@@ -121,6 +121,7 @@
       dpStrain = 0.0D0
       updatedSS(:) = 0.0D0
 
+      ! N-R iteration
       DO WHILE ((eqStress - effectiveStress)>=effectiveStress*TOLER)
         x(1:6) = dLambda*dGdS(:) - dpStrain
         x(7) = dLambda*eqGStress/eqStress - updatedSS(7)
@@ -152,12 +153,12 @@
      &   calc_EffectiveStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
         CALL calc_dGdS(hillParams,STRESS,dGdS)
       END DO
+
+      ! update DDSDDE
       DO i=1,6
         dfdS(i) = 
      &   calc_dPhidX(orientations(i),YLDM,yldCPrime,yldCDbPrime,STRESS)
       END DO
-
-      ! update DDSDDE
       numeratordLambda = DOT_PRODUCT(dfdS,MATMUL(DDSDDE,DSTRAN))
       denominatordLambda = dLambda/numeratordLambda
       CALL calc_dyad(6,MATMUL(DDSDDE,dGdS),MATMUL(dfdS,DDSDDE),dyadMat)
