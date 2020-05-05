@@ -25,7 +25,7 @@
       exLankford(8) = 1.112D0
 
       yldCPrime(:,:) = 0.0D0
-      yldCPrime(1:3,1:3) = 0.75D0
+      yldCPrime(1:3,1:3) = 0.8D0
       yldCPrime(5,5) = 1.0D0
       yldCPrime(6,6) = 1.0D0
       yldCDbPrime(:,:) = 0.0D0
@@ -49,8 +49,8 @@
       DOUBLE PRECISION exStress(8),exLankford(8),yldCPrime(6,6),
      & yldCDbPrime(6,6),LEARNINGRATE,TOL,WEIGHTS,WEIGHTR,WEIGHTB,
      & dCFactors(14),error,errorFunc
-      PARAMETER(LEARNINGRATE=0.1D-5,TOL=1.0D-6,WEIGHTS=1.0D0,
-     & WEIGHTR=1.0D-4,WEIGHTB=1.0D-3)
+      PARAMETER(LEARNINGRATE=0.1D-6,TOL=.8D-3,WEIGHTS=1.0D0,
+     & WEIGHTR=0.0D0,WEIGHTB=0.0D0)
       dCFactors(:) = 1.0D0
       error = errorFunc(YLDM,WEIGHTS,WEIGHTR,WEIGHTB,
      & exStress,exLankford,yldCPrime,yldCDbPrime)
@@ -76,7 +76,9 @@
      &   exStress,exLankford,yldCPrime,yldCDbPrime)
         WRITE(*,*) 'error: ',error
         iterationCount = iterationCount + 1
-        IF (iterationCount >= 10000) THEN
+        OPEN(40,FILE='errorFunc.csv')
+        WRITE(40,*) iterationCount,error
+        IF (iterationCount >= 1000000) THEN
           WRITE(*,*) 'too many'
           EXIT
         END IF
