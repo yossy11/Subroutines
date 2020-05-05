@@ -49,15 +49,15 @@
       DOUBLE PRECISION exStress(8),exLankford(8),yldCPrime(6,6),
      & yldCDbPrime(6,6),LEARNINGRATE,TOL,WEIGHTS,WEIGHTR,WEIGHTB,
      & dCFactors(14),error,errorFunc
-      PARAMETER(LEARNINGRATE=0.1D-3,TOL=1.0D-6,WEIGHTS=1.0D0,
-     & WEIGHTR=1.0D-1,WEIGHTB=1.0D-2)
+      PARAMETER(LEARNINGRATE=0.1D-5,TOL=1.0D-6,WEIGHTS=1.0D0,
+     & WEIGHTR=1.0D-4,WEIGHTB=1.0D-3)
       dCFactors(:) = 1.0D0
       error = errorFunc(YLDM,WEIGHTS,WEIGHTR,WEIGHTB,
      & exStress,exLankford,yldCPrime,yldCDbPrime)
       DO WHILE (error>TOL)
         CALL calc_dCFactors(YLDM,WEIGHTS,WEIGHTR,WEIGHTB,exStress,
      &   exLankford,yldCPrime,yldCDbPrime,dCFactors)
-        dCFactors(:) = (-1.0D0)*dCFactors(:)
+        dCFactors(:) = (1.0D0)*dCFactors(:)
         yldCPrime(1,2) = yldCPrime(1,2) - LEARNINGRATE*dCFactors(1)
         yldCPrime(1,3) = yldCPrime(1,3) - LEARNINGRATE*dCFactors(2)
         yldCPrime(2,1) = yldCPrime(2,1) - LEARNINGRATE*dCFactors(3)
@@ -111,23 +111,25 @@
         bufStress(6) = exStress(i)*SIN((i-1)*PI/12.0D0)*
      &   COS((i-1)*PI/12.0D0)
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,bufStress)
-        IF (eqStress==0.0D0.or.ISNAN(eqStress)) THEN
+        IF (ISNAN(eqStress)) THEN
           WRITE(*,*) 'error occurred, invalid eqStress: ',eqStress
         END IF
-        lankford = -1.0D0 - 4.0D0*YLDM/(calc_dPhidX('szz  ',YLDM,
-     &   yldCPrime,yldCDbPrime,bufStress)*exStress(i)/eqStress)
-        errorFunc = errorFunc + WEIGHTS*(eqStress/exStress(i) - 1)**2
-     &    + WEIGHTR*(lankford/exLankford(i) - 1)**2
+        lankford = 1.0D0 - 4.0D0*YLDM*eqStress/(exStress(i)*
+     &   calc_dPhidX('szz  ',YLDM,yldCPrime,yldCDbPrime,bufStress))
+        ! WRITE(*,*) lankford
+        errorFunc = errorFunc + 
+     &   WEIGHTS*(eqStress/exStress(i) - 1.0D0)**2 + 
+     &   WEIGHTR*(lankford/exLankford(i) - 1.0D0)**2
       END DO
       bufStress(:) = 0.0D0
       bufStress(3) = exStress(8)
-      eqStress = 1.0D0
       eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,bufStress)
       lankford = 
      & calc_dPhidX('syy  ',YLDM,yldCPrime,yldCDbPrime,bufStress)
      & /calc_dPhidX('sxx  ',YLDM,yldCPrime,yldCDbPrime,bufStress)
-      errorFunc = errorFunc + WEIGHTB*(((eqStress/exStress(8)) - 1)**2
-     &  + (lankford/exLankford(8) - 1)**2)
+      errorFunc = errorFunc + 
+     & WEIGHTB*(eqStress/exStress(8) - 1.0D0)**2 + 
+     & WEIGHTB*(lankford/exLankford(8) - 1.0D0)**2
       RETURN
       END FUNCTION errorFunc
 
@@ -311,6 +313,8 @@
         denominator = 3.0D0*(yldSPriPrime(i)**2 - 
      &   2.0D0*invariantsPrime(1)*yldSPriPrime(i) - invariantsPrime(2))
         IF (denominator==0.0D0) THEN
+          WRITE(*,*) yldSPriPrime(i),invariantsPrime(1),
+     &     invariantsPrime(2)
           denominator = denominator + 1.0D-6
         END IF
         dSPridHPrime(i,3) = 2.0D0/denominator
@@ -320,6 +324,8 @@
         denominator = 3.0D0*(yldSPriDbPrime(i)**2 - 2.0D0*
      &   invariantsDbPrime(1)*yldSPriDbPrime(i) - invariantsDbPrime(2))
         IF (denominator==0.0D0) THEN
+          WRITE(*,*) yldSPriDbPrime(i),invariantsDbPrime(1),
+     &     invariantsDbPrime(2)
           denominator = denominator + 1.0D-6
         END IF
         dSPridHDbPrime(i,3) = 2.0D0/denominator
@@ -334,18 +340,18 @@
       DO i=1,3
         dPhidSPriPrime(i) = YLDM*((yldSPriPrime(i) - 
      &   yldSPriDbPrime(1))*(ABS(yldSPriPrime(i) - 
-     &   yldSPriDbPrime(1))**(YLDM - 2))+(yldSPriPrime(i) - 
+     &   yldSPriDbPrime(1))**(YLDM - 2.0D0))+(yldSPriPrime(i) - 
      &   yldSPriDbPrime(2))*(ABS(yldSPriPrime(i) - 
-     &   yldSPriDbPrime(2))**(YLDM - 2))+(yldSPriPrime(i) - 
+     &   yldSPriDbPrime(2))**(YLDM - 2.0D0))+(yldSPriPrime(i) - 
      &   yldSPriDbPrime(3))*(ABS(yldSPriPrime(i) - yldSPriDbPrime(3))**
-     &   (YLDM - 2)))
+     &   (YLDM - 2.0D0)))
         dPhidSPriDbPrime(i) = YLDM*((yldSPriDbPrime(i) - 
      &   yldSPriPrime(1))*(ABS(yldSPriDbPrime(i) - 
-     &   yldSPriPrime(1))**(YLDM - 2))+(yldSPriDbPrime(i) - 
+     &   yldSPriPrime(1))**(YLDM - 2.0D0))+(yldSPriDbPrime(i) - 
      &   yldSPriPrime(2))*(ABS(yldSPriDbPrime(i) - 
-     &   yldSPriPrime(2))**(YLDM - 2))+(yldSPriDbPrime(i) - 
+     &   yldSPriPrime(2))**(YLDM - 2.0D0))+(yldSPriDbPrime(i) - 
      &   yldSPriPrime(3))*(ABS(yldSPriDbPrime(i) - yldSPriPrime(3))**
-     &   (YLDM - 2)))
+     &   (YLDM - 2.0D0)))
       END DO
       calc_dPhidX =  DOT_PRODUCT(dPhidSPriPrime,dSPridXPrime) + 
      & DOT_PRODUCT(dPhidSPriDbPrime,dSPridXDbPrime)
@@ -376,7 +382,7 @@
           bufdPhidX = 
      &     calc_dPhidX('szz  ',YLDM,yldCPrime,yldCDbPrime,bufStress)
           lankford = 
-     &     -1.0D0 - 4.0D0*YLDM/(bufdPhidX*exStress(i)/eqStress)
+     &     -1.0D0 - 4.0D0*YLDM*eqStress/(bufdPhidX*exStress(i))
           dFdPhi = eqStress/(YLDM*(eqStress**YLDM))
           dSdCPrime = dFdPhi*calc_dPhidX(orientations(i),YLDM,
      &     yldCPrime,yldCDbPrime,bufStress)
@@ -385,28 +391,28 @@
           dRdCPrime = -4.0D0*YLDM*dSdCPrime/(exStress(j)*bufdPhidX)
           dRdCDbPrime = -4.0D0*YLDM*dSdCDbPrime/(exStress(j)*bufdPhidX)
           dCFactors(i) = dCFactors(i) + WEIGHTS*2*dSdCPrime*
-     &     ((eqStress/exStress(j)) - 1)/exStress(j) + WEIGHTR*2*
-     &     dRdCPrime*((lankford/exLankford(j)) - 1)/exLankford(j)
-          dCFactors(i+7) = dCFactors(i+7) + WEIGHTS*2*dSdCDbPrime*
-     &     ((eqStress/exStress(j)) - 1)/exStress(j) + WEIGHTR*2*
-     &     dRdCDbPrime*((lankford/exLankford(j)) - 1)/exLankford(j)
+     &     (eqStress/exStress(j) - 1.0D0)/exStress(j) + WEIGHTR*2.0D0*
+     &     dRdCPrime*(lankford/exLankford(j) - 1.0D0)/exLankford(j)
+          dCFactors(i+7) = dCFactors(i+7) + WEIGHTS*2.0D0*dSdCDbPrime*
+     &     (eqStress/exStress(j) - 1.0D0)/exStress(j) + WEIGHTR*2.0D0*
+     &     dRdCDbPrime*(lankford/exLankford(j) - 1.0D0)/exLankford(j)
         END DO
       END DO
       bufStress(:) = 0.0D0
       bufStress(3) = exStress(8)
       eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,bufStress)
-      lankford = calc_dPhidX('syy  ',YLDM,yldCPrime,yldCDbPrime,
-     & bufStress)/calc_dPhidX('sxx  ',YLDM,yldCPrime,yldCDbPrime,
-     & bufStress)
+      lankford = 
+     & calc_dPhidX('syy  ',YLDM,yldCPrime,yldCDbPrime,bufStress)/
+     & calc_dPhidX('sxx  ',YLDM,yldCPrime,yldCDbPrime,bufStress)
       dFdPhi = eqStress/(YLDM*(eqStress**YLDM))
-      dSdCPrime = dFdPhi*calc_dPhidX(orientations(7),
-     & YLDM,yldCPrime,yldCDbPrime,bufStress)
+      dSdCPrime = dFdPhi*
+     & calc_dPhidX(orientations(7),YLDM,yldCPrime,yldCDbPrime,bufStress)
       dSdCDbPrime = dFdPhi*calc_dPhidX(orientations(14),
      & YLDM,yldCPrime,yldCDbPrime,bufStress)
-      dCFactors(7) = dCFactors(7) + 
-     & WEIGHTB*2*dSdCPrime*((eqStress/exStress(8)) - 1)/exStress(8)
-      dCFactors(14) = dCFactors(14) + 
-     & WEIGHTB*2*dSdCDbPrime*((eqStress/exStress(8)) - 1)/exStress(8)
+      dCFactors(7) = dCFactors(7) + WEIGHTB*2.0D0*
+     & dSdCPrime*(eqStress/exStress(8) - 1.0D0)/exStress(8)
+      dCFactors(14) = dCFactors(14) + WEIGHTB*2.0D0*
+     & dSdCDbPrime*(eqStress/exStress(8) - 1.0D0)/exStress(8)
       RETURN
       END SUBROUTINE calc_dCFactors
 
@@ -457,7 +463,7 @@
       params(4) = (2.0D0/exStress(4))**2 - (1.0D0/exStress(8))**2
       params(1:4) = params(1:4)*exStress(1)**2/2.0D0
      
-      params(5) = exLankford(1)/(exLankford(7)*(1 + exLankford(1)))
+      params(5) = exLankford(1)/(exLankford(7)*(1.0D0 + exLankford(1)))
       params(6) = 1.0D0/(1.0D0 + exLankford(1))
       params(7) = exLankford(1)/(1.0D0 + exLankford(1))
       params(8) = 

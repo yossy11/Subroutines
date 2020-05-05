@@ -6,7 +6,7 @@ LDFLAGS=-lm
 
 all: debug
 
-TARGETS=IdentifyParams
+TARGETS=IdentifyParams GradientDescent
 DEBUG_TARGETS=$(TARGETS:%=Debug/%)
 
 debug:Debug $(DEBUG_TARGETS)
@@ -19,6 +19,10 @@ Debug/%.o : src/%.for
 
 OBJS1=IdentifyParams.o
 Debug/IdentifyParams : $(OBJS1:%=Debug/%)
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+OBJS2=GradientDescent.o
+Debug/GradientDescent : $(OBJS2:%=Debug/%)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 clean: 
