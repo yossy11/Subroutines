@@ -18,7 +18,7 @@
       DOUBLE PRECISION TOLER,YOUNG,POISSON,HARDK,HARDN,HARDSTRAIN0,YLDM,
      & lame,shearMod,invDDSDDE(6,6),eStrain(6),pStrain(6),eqpStrain,
      & totalStrain(6),yldCPrime(6,6),yldCDbPrime(6,6),hillParams(4),
-     & eqStress,effectiveStress,calc_eqStress,calc_EffectiveStress,
+     & eqStress,flowStress,calc_eqStress,calc_FlowStress,
      & dfdS(6),calc_dPhidX,dGdS(6),ddGddS(6,6),eqGStress,calc_eqGStress,
      & dLambda,invA(7,7),A(7,7),dpStrain(6),updatedSS(7),x(7),y(7),
      & dFS(6),dFeqpStrain,dF(7),ddLambda,numeratordLambda,
@@ -84,13 +84,13 @@
       hillParams(3) = 0.49475729368213273
       hillParams(4) = 1.5532035559766002
 
-      ! calculate eqStress and effectiveStress
+      ! calculate eqStress and flowStress
       eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
-      effectiveStress = 
-     & calc_EffectiveStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
+      flowStress = 
+     & calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
 
       ! if not yield
-      IF ((eqStress - effectiveStress) < effectiveStress*TOLER) THEN
+      IF ((eqStress - flowStress) < flowStress*TOLER) THEN
         CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
         RETURN
       END IF
@@ -122,7 +122,7 @@
       updatedSS(:) = 0.0D0
 
       ! N-R iteration
-      DO WHILE ((eqStress - effectiveStress)>=effectiveStress*TOLER)
+      DO WHILE ((eqStress - flowStress)>=flowStress*TOLER)
         x(1:6) = dLambda*dGdS(:) - dpStrain
         x(7) = dLambda*eqGStress/eqStress - updatedSS(7)
         y(1:6) = dGdS(:)
@@ -138,7 +138,7 @@
      &   -1.0D0*HARDK*HARDN*(HARDSTRAIN0+eqpStrain)**(HARDN-1.0D0)
         dF(1:6) = dFS(:)
         dF(7) = dFeqpStrain
-        ddLambda =(eqStress - effectiveStress - 
+        ddLambda =(eqStress - flowStress - 
      &   DOT_PRODUCT(dF,MATMUL(A,x)))/DOT_PRODUCT(dF,MATMUL(A,y))
         updatedSS = (-1.0D0)*(MATMUL(A,x) + ddLambda*MATMUL(A,y))
         dpStrain = (-1.0D0)*MATMUL(invDDSDDE,updatedSS(1:6))
@@ -149,8 +149,8 @@
         eStrain(:) = totalStrain(:) - pStrain(:)
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
         eqGStress = calc_eqGStress(hillParams,STRESS)
-        effectiveStress = 
-     &   calc_EffectiveStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
+        flowStress = 
+     &   calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
         CALL calc_dGdS(hillParams,STRESS,dGdS)
       END DO
 
@@ -237,14 +237,14 @@
       END FUNCTION calc_eqGStress
 
 
-      ! calculate effective stress
-      DOUBLE PRECISION FUNCTION calc_EffectiveStress(HARDK,HARDSTRAIN0,
+      ! calculate flow stress
+      DOUBLE PRECISION FUNCTION calc_FlowStress(HARDK,HARDSTRAIN0,
      & HARDN,eqpStrain)
       IMPLICIT NONE
       DOUBLE PRECISION HARDK,HARDSTRAIN0,HARDN,eqpStrain
-      calc_EffectiveStress = HARDK*((HARDSTRAIN0 + eqpStrain)**HARDN)
+      calc_FlowStress = HARDK*((HARDSTRAIN0 + eqpStrain)**HARDN)
       RETURN
-      END FUNCTION calc_EffectiveStress
+      END FUNCTION calc_FlowStress
 
 
       ! update all state variable
