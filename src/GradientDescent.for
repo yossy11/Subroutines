@@ -6,7 +6,7 @@
       ALLOCATABLE strains(:),stresses(:)
       PARAMETER(TOL=1.0D-5)
       n = 0
-      OPEN(20, FILE='exData.csv', STATUS='old')
+      OPEN(20, FILE='./Datas/exData.csv', STATUS='old')
       READ(20, '()')
       DO
         READ(20, *, END=100)

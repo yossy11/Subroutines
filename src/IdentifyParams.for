@@ -5,7 +5,6 @@
       DOUBLE PRECISION exStress(8),exLankford(8),yldCPrime(6,6),
      & yldCDbPrime(6,6),hillParams(8)
       PARAMETER(YLDM=6)
-      exStress = 0.0D0
       exStress(1) = 115.796080569375D0
       exStress(2) = 116.39694377773D0
       exStress(3) = 112.821037305888D0
@@ -37,7 +36,7 @@
         yldCDbPrime(i,i) = 0.0D0
       END DO
       CALL optimize_yldC(YLDM,exStress,exLankford,yldCPrime,yldCDbPrime)
-      !CALL calc_Hill48Params(exStress,exLankford,hillParams)
+      CALL calc_Hill48Params(exStress,exLankford,hillParams)
       END PROGRAM IdentifyParams
 
 
@@ -54,6 +53,7 @@
       dCFactors(:) = 1.0D0
       error = errorFunc(YLDM,WEIGHTS,WEIGHTR,WEIGHTB,
      & exStress,exLankford,yldCPrime,yldCDbPrime)
+      OPEN(40,FILE='./Datas/errorFunc.csv')
       DO WHILE (error>TOL)
         CALL calc_dCFactors(YLDM,WEIGHTS,WEIGHTR,WEIGHTB,exStress,
      &   exLankford,yldCPrime,yldCDbPrime,dCFactors)
@@ -76,14 +76,13 @@
      &   exStress,exLankford,yldCPrime,yldCDbPrime)
         WRITE(*,*) 'error: ',error
         iterationCount = iterationCount + 1
-        OPEN(40,FILE='errorFunc.csv')
         WRITE(40,*) iterationCount,error
         IF (iterationCount >= 1000000) THEN
           WRITE(*,*) 'too many'
           EXIT
         END IF
       END DO
-      OPEN(20,FILE='yld2004Params.csv')
+      OPEN(20,FILE='./Datas/yld2004Params.csv')
       WRITE(20,*) 'yldCPrime'
       DO i=1,6
         WRITE(20,*) yldCPrime(i,:)
@@ -426,14 +425,16 @@
      & cosTheta,theta
       PARAMETER(PI=ACOS(-1.0D0))
       CALL calc_Invariants(stress,invariants)
-      radius = 2*SQRT(invariants(1)**2 + invariants(2))
-      cosTheta = MAX(-1.0D0,MIN(1.0D0,((2*invariants(1)**3 + 
-     & 3*invariants(1)*invariants(2) + 2*invariants(3))/2.0D0)/
+      radius = 2.0D0*SQRT(invariants(1)**2 + invariants(2))
+      cosTheta = MAX(-1.0D0,MIN(1.0D0,((2.0D0*invariants(1)**3 + 
+     & 3.0D0*invariants(1)*invariants(2) + 2.0D0*invariants(3))/2.0D0)/
      & SQRT((invariants(1)**2 + invariants(2))**3)))
       theta = ACOS(cosTheta)
       principal(1) = radius*COS(theta/3.0D0) + invariants(1)
-      principal(2) = radius*COS((theta + 4*PI)/3.0D0) + invariants(1)
-      principal(3) = radius*COS((theta + 2*PI)/3.0D0) + invariants(1)
+      principal(2) = 
+     & radius*COS((theta + 4.0D0*PI)/3.0D0) + invariants(1)
+      principal(3) = 
+     & radius*COS((theta + 2.0D0*PI)/3.0D0) + invariants(1)
       RETURN
       END SUBROUTINE calc_Principal
 
@@ -471,7 +472,7 @@
       params(8) = 
      & (exLankford(1) + exLankford(7))*(1.0D0 + exLankford(4))/
      & (2.0D0*exLankford(7)*(1.0D0+exLankford(1)))
-      OPEN(30,FILE='hill48Params.csv')
+      OPEN(30,FILE='./Datas/hill48Params.csv')
       WRITE(30,*) 'Stress'
       WRITE(30,*) 'F= ',params(1)
       WRITE(30,*) 'G= ',params(2)
