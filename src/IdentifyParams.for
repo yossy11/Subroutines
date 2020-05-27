@@ -5,30 +5,34 @@
       DOUBLE PRECISION exStress(8),exLankford(8),yldCPrime(6,6),
      & yldCDbPrime(6,6),hillParams(8)
       PARAMETER(YLDM=6)
-      exStress(1) = 115.796080569375D0
-      exStress(2) = 116.39694377773D0
-      exStress(3) = 112.821037305888D0
-      exStress(4) = 114.862943596084D0
-      exStress(5) = 115.045917778501D0
-      exStress(6) = 114.736215791944D0
-      exStress(7) = 118.906776179804D0
-      exStress(8) = 118.254840921828D0
+      exStress(:) = 115.0D0
+      exLankford(:) = 1.0D0
+      ! exStress(1) = 115.796080569375D0
+      ! exStress(2) = 116.39694377773D0
+      ! exStress(3) = 112.821037305888D0
+      ! exStress(4) = 114.862943596084D0
+      ! exStress(5) = 115.045917778501D0
+      ! exStress(6) = 114.736215791944D0
+      ! exStress(7) = 118.906776179804D0
+      ! exStress(8) = 118.254840921828D0
 
-      exLankford(1) = 0.69935D0
-      exLankford(2) = 0.70275D0
-      exLankford(3) = 0.7424D0
-      exLankford(4) = 0.77555D0
-      exLankford(5) = 0.78975D0
-      exLankford(6) = 0.7594D0
-      exLankford(7) = 0.7748D0
-      exLankford(8) = 1.112D0
+      ! exLankford(1) = 0.69935D0
+      ! exLankford(2) = 0.70275D0
+      ! exLankford(3) = 0.7424D0
+      ! exLankford(4) = 0.77555D0
+      ! exLankford(5) = 0.78975D0
+      ! exLankford(6) = 0.7594D0
+      ! exLankford(7) = 0.7748D0
+      ! exLankford(8) = 1.112D0
 
       yldCPrime(:,:) = 0.0D0
-      yldCPrime(1:3,1:3) = 0.8D0
+      yldCPrime(1:3,1:3) = 1.0D0
+      yldCPrime(4,4) = 1.0D0
       yldCPrime(5,5) = 1.0D0
       yldCPrime(6,6) = 1.0D0
       yldCDbPrime(:,:) = 0.0D0
       yldCDbPrime(1:3,1:3) = 1.0D0
+      yldCDbPrime(4,4) = 1.0D0
       yldCDbPrime(5,5) = 1.0D0
       yldCDbPrime(6,6) = 1.0D0
       DO i=1,3
@@ -74,7 +78,7 @@
         yldCDbPrime(4,4) = yldCDbPrime(4,4) - LEARNINGRATE*dCFactors(14)
         error = errorFunc(YLDM,WEIGHTS,WEIGHTR,WEIGHTB,
      &   exStress,exLankford,yldCPrime,yldCDbPrime)
-        WRITE(*,*) 'error: ',error
+        ! WRITE(*,*) 'error: ',error
         iterationCount = iterationCount + 1
         WRITE(40,*) iterationCount,error
         IF (iterationCount >= 1000000) THEN
@@ -114,10 +118,11 @@
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,bufStress)
         IF (ISNAN(eqStress)) THEN
           WRITE(*,*) 'error occurred, invalid eqStress: ',eqStress
+          CALL EXIT
         END IF
         lankford = 1.0D0 - 4.0D0*YLDM*eqStress/(exStress(i)*
      &   calc_dPhidX('szz  ',YLDM,yldCPrime,yldCDbPrime,bufStress))
-        ! WRITE(*,*) lankford
+        WRITE(*,*) lankford
         errorFunc = errorFunc + 
      &   WEIGHTS*(eqStress/exStress(i) - 1.0D0)**2 + 
      &   WEIGHTR*(lankford/exLankford(i) - 1.0D0)**2
