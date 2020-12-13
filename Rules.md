@@ -29,7 +29,7 @@
 
 - ABAQUS とは関係のないファイルに出力することはできなそう(OPEN してそこに WRITE するのは無理っぽい)
 - WRITE 文 の装置識別子は dat ファイルに出力する場合 6,msg ファイルに出力する場合 7 を用いる
-- STRESS に格納されている値は xx,yy,zz,xy,xz,yz の順
+- STRESS に格納されている値は xx,yy,zz,xy,xz,yz の順([参考](https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-conventions.htm#simamod-c-conventions-t-ConventionUsedForStressAndStrainComponents-sma-topic16))
 - UMAT のサブルーチンを実装して利用する場合、それが適用されるのは"ユーザー定義材料特性"が定義されているマテリアルが使用されているパートのみ
 - 上記のユーザー定義材料特性は UMAT で PROPS という配列内に保存されている
 - ステップをまたいで使用したい変数は STATEV という配列に格納すれば良い(配列のサイズは ABAQUS の"材料特性の編集"ウィンドウの"解依存の状態変数"から定義できる)
