@@ -120,8 +120,13 @@
         CALL calc_dGdS(hillParams,STRESS,dGdS)
         ! WRITE(7,*) "H", H
         ! WRITE(7,*) "denominator", DOT_PRODUCT(dfdS,MATMUL(DDSDDE,dGdS))
-        dLambda = -1.0D0*F/(-1.0D0*DOT_PRODUCT(dfdS,MATMUL(DDSDDE,dGdS))
+        dLambda = F/(DOT_PRODUCT(dfdS,MATMUL(DDSDDE,dGdS))
      &    + H*eqGStress/eqStress)
+        IF (dLambda<0) THEN
+          WRITE(7,*) "dLambda < 0, invalid!!"
+          WRITE(7,*) "value:",DOT_PRODUCT(dfdS,MATMUL(DDSDDE,dGdS))
+          CALL XIT
+        END IF
         ! WRITE(7,*) "eqGStress", eqGStress
         ! WRITE(7,*) "dfdS", dfdS
         ! WRITE(7,*) "dGdS", dGdS
