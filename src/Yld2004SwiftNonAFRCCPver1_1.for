@@ -91,14 +91,14 @@
       prevF = 10000
       
       DO WHILE (iterationNum < 1000000)
-        WRITE(7,*) "here", iterationNum
+        ! WRITE(7,*) "here", iterationNum
         ! calculate eqStress and flowStress
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
         flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
         F = eqStress - flowStress
         ! WRITE(7,*) "eqStress", eqStress
         ! WRITE(7,*) "flowStress", flowStress
-        WRITE(7,*) "F", F
+        ! WRITE(7,*) "F", F
 
         ! if not yield
         IF (F < flowStress*5*TOLER) THEN
@@ -130,7 +130,7 @@
 
         STRESS(:) = STRESS(:) - dLambda*MATMUL(DDSDDE,dGdS)
         eqpStrain = eqpStrain + dLambda*eqGStress/eqStress
-        WRITE(7,*) "eqpStrain",eqpStrain
+        ! WRITE(7,*) "eqpStrain",eqpStrain
         pStrain(:) = pStrain(:) + dLambda*dGdS(:)
         eStrain(:) = eStrain(:) - dLambda*dGdS(:)
         iterationNum = iterationNum + 1
