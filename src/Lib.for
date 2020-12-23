@@ -76,3 +76,34 @@
       CALL RANDOM_NUMBER(x)
       WRITE(*,*) x
       END FUNCTION random
+
+
+      ! sort list in descending order
+      RECURSIVE SUBROUTINE quickSort(vec, first, last)
+      IMPLICIT NONE
+      INTEGER first,last,i,j
+      DOUBLE PRECISION  vec(*),x,t      
+      x = vec( (first+last) / 2 )
+      i = first
+      j = last
+      DO
+        DO WHILE (vec(i) > x)
+          i=i+1
+        END DO
+        DO WHILE (x > vec(j))
+          j=j-1
+        END DO
+        IF (i >= j) EXIT
+        t = vec(i)
+        vec(i) = vec(j)
+        vec(j) = t
+        i=i+1
+        j=j-1
+      END DO
+      IF (first < i - 1) THEN
+        CALL quicksort(vec, first, i - 1)
+      END IF
+      IF (j + 1 < last) THEN
+        CALL quicksort(vec, j + 1, last)
+      END IF
+      END SUBROUTINE quickSort
