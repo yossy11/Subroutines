@@ -22,7 +22,7 @@
      & dfdS(6),calc_dPhidX,dGdS(6),ddGddS(6,6),eqGStress,calc_eqGStress,
      & dLambda,invA(7,7),A(7,7),dpStrain(6),updatedSS(7),x(7),y(7),
      & dFS(6),dFeqpStrain,dF(7),ddLambda,numeratordLambda,
-     & denominatordLambda,dyadMat(6,6),F,H,prevF
+     & denominatordLambda,dyadMat(6,6),F,H,prevF,subDDSDDE(6,6)
 
       ! define constants
       PARAMETER(TOLER=1.0D-3,YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,
@@ -83,6 +83,7 @@
       ! calculate trial stress
       STRESS(:) = STRESS(:) + MATMUL(DDSDDE,DSTRAN)
       iterationNum = 0
+      subDDSDDE(:,:) = DDSDDE(:,:)
 
       DO WHILE (iterationNum < 1000000)
         ! WRITE(7,*) "iterationNum",iterationNum
@@ -94,6 +95,7 @@
         ! if not yield
         IF (F < flowStress*TOLER) THEN
           CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
+          DDSDDE(:,:) = subDDSDDE(:,:)
           RETURN
         END IF
 
@@ -119,12 +121,15 @@
           CALL XIT
         END IF
 
+
         STRESS(:) = STRESS(:) - dLambda*MATMUL(DDSDDE,dGdS)
         eqpStrain = eqpStrain + dLambda*eqGStress/eqStress
         pStrain(:) = pStrain(:) + dLambda*dGdS(:)
         eStrain(:) = eStrain(:) - dLambda*dGdS(:)
+        DO i=1,6
+          subDDSDDE(i,i) = subDDSDDE(i,i) - dLambda*dGdS(i)
+        END DO
         iterationNum = iterationNum + 1
-        ! WRITE(7,*) "eqpStrain",eqpStrain
       END DO
       WRITE(7,*) "not converged!!!"
       CALL XIT

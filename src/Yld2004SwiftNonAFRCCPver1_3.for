@@ -119,6 +119,9 @@
           CALL XIT
         END IF
 
+        WRITE(7,*) "iterationNum",iterationNum
+        WRITE(7,*) "dLambda",dLambda
+
         STRESS(:) = STRESS(:) - dLambda*MATMUL(DDSDDE,dGdS)
         eqpStrain = eqpStrain + dLambda*eqGStress/eqStress
         pStrain(:) = pStrain(:) + dLambda*dGdS(:)
