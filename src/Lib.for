@@ -1,6 +1,7 @@
       ! calculate inverse matrix
       SUBROUTINE calcInverse(dim,mat,invMat)
-      INTEGER dim
+      IMPLICIT NONE
+      INTEGER dim,i,j
       DOUBLE PRECISION mat(dim,dim),invMat(dim,dim),bufMat(dim,dim),buf
       bufMat(:,:) = mat(:,:)
       invMat(:,:) = 0.0D0
