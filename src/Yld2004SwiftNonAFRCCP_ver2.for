@@ -359,7 +359,7 @@
       ! calculate inverse matrix
       SUBROUTINE calc_Inverse(dim,mat,invMat)
       IMPLICIT NONE
-      INTEGER dim
+      INTEGER dim,i,j
       DOUBLE PRECISION mat(dim,dim),invMat(dim,dim),bufMat(dim,dim),buf
       bufMat(:,:) = mat(:,:)
       invMat(:,:) = 0.0D0
