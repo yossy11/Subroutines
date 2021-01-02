@@ -251,6 +251,7 @@
       ! calculate differential of plastic potential
       SUBROUTINE calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
       IMPLICIT NONE
+      INTEGER i,j
       DOUBLE PRECISION hillParams(4),STRESS(6),dGdS(6),ddGddS(6,6),
      & eqGStress,calc_eqGStress,multiplier
       eqGStress = calc_eqGStress(hillParams,STRESS)
