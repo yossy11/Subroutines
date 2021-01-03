@@ -92,12 +92,18 @@
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
         flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
         F = eqStress - flowStress
+        IF (ISNAN(F)) THEN
+          WRITE(7,*) "F is NaN"
+          CALL XIT
+        END IF
 
         ! if not yield
         IF (F < flowStress*TOLER) THEN
           CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
-          CALL updateDDSDDE(hillParams,STRESS,DDSDDE,lambda,eqStress,
-     &     HARDK,HARDN,HARDSTRAIN0,eqpStrain)
+          IF (iterationNum /= 0) THEN
+            CALL updateDDSDDE(hillParams,STRESS,DDSDDE,lambda,eqStress,
+     &       HARDK,HARDN,HARDSTRAIN0,eqpStrain)
+          END IF
           RETURN
         END IF
 
@@ -116,13 +122,15 @@
           CALL XIT
         END IF
 
-        IF (lambda==0.0D0) THEN
-          lambda = DOT_PRODUCT(dGdS,MATMUL(DDSDDE,DSTRAN))/
-     &     (DOT_PRODUCT(dGdS,MATMUL(DDSDDE,dGdS)) + H*eqGStress/eqStress)
-          dLambda = lambda
-        ELSE
-          lambda = lambda + dLambda
-        END IF
+    !     IF (iterationNum==0) THEN
+    !       lambda = DOT_PRODUCT(dGdS,MATMUL(DDSDDE,DSTRAN))/
+    !  &     (DOT_PRODUCT(dGdS,MATMUL(DDSDDE,dGdS)) + H*eqGStress/eqStress)
+    !       dLambda = lambda
+    !     ELSE
+    !       lambda = lambda + dLambda
+    !     END IF
+
+        lambda = lambda + dLambda
 
         STRESS(:) = STRESS(:) - dLambda*MATMUL(DDSDDE,dGdS)
         eqpStrain = eqpStrain + dLambda*eqGStress/eqStress
@@ -131,6 +139,7 @@
         iterationNum = iterationNum + 1
       END DO
       WRITE(7,*) "not converged!!!"
+      WRITE(7,*) "F",F
       CALL XIT
       RETURN
       END SUBROUTINE UMAT
@@ -198,15 +207,19 @@
       SUBROUTINE updateDDSDDE(hillParams,STRESS,DDSDDE,lambda,eqStress,
      & HARDK,HARDN,HARDSTRAIN0,eqpStrain)
       IMPLICIT NONE
+      INTEGER i,j
       DOUBLE PRECISION hillParams(4),STRESS(6),DDSDDE(6,6),lambda,
      & eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain,eqGStress,
-     & calc_eqGStress,dGdS(6),ddGddS(6,6),A(7,7),B(6,6),invDDSDDE(6,6),
-     & h0,subVec(7),vec1(7),vec2(7),H,C(7,7)
+     & calc_eqGStress,dGdS(6),ddGddS(6,6),A(7,7),B(6,6),invB(6,6),
+     & invDDSDDE(6,6),h0,subVec(7),vec1(7),vec2(7),H,C(7,7),
+     & subDDSDDE(6,6)
+      subDDSDDE(:,:) = DDSDDE(:,:)
       eqGStress = calc_eqGStress(hillParams,STRESS)
       CALL calc_dGdS(hillParams,STRESS,dGdS)
       CALL calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
-      B(:,:) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
+      invB(:,:) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
+      CALL calc_Inverse(6,invB,B)
       A(:,:) = 0.0D0
       A(1:6,1:6) = B(:,:)
       A(7,7) = 1.0D0
@@ -223,6 +236,14 @@
      & (DOT_PRODUCT(dGdS,MATMUL(B,dGdS)) + H*h0)
       A(:,:) = A(:,:) - C(:,:)
       DDSDDE(:,:) = A(1:6,1:6)
+      DO i=1,6
+        DO j=1,6
+          IF (ISNAN(DDSDDE(i,j))) THEN
+            DDSDDE(:,:) = subDDSDDE(:,:)
+            RETURN
+          END if
+        END DO
+      END DO
       RETURN
       END SUBROUTINE updateDDSDDE
 
