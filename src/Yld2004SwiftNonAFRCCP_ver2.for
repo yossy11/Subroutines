@@ -122,13 +122,13 @@
           CALL XIT
         END IF
 
-    !     IF (iterationNum==0) THEN
-    !       lambda = DOT_PRODUCT(dGdS,MATMUL(DDSDDE,DSTRAN))/
-    !  &     (DOT_PRODUCT(dGdS,MATMUL(DDSDDE,dGdS)) + H*eqGStress/eqStress)
-    !       dLambda = lambda
-    !     ELSE
-    !       lambda = lambda + dLambda
-    !     END IF
+        IF (iterationNum==0) THEN
+          lambda = DOT_PRODUCT(dGdS,MATMUL(DDSDDE,DSTRAN))/
+     &     (DOT_PRODUCT(dGdS,MATMUL(DDSDDE,dGdS)) + H*eqGStress/eqStress)
+          dLambda = lambda
+        ELSE
+          lambda = lambda + dLambda
+        END IF
 
         lambda = lambda + dLambda
 
