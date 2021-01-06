@@ -94,7 +94,8 @@
       ! return mapping method
       DO WHILE (iterationNum < numSubSteps)
         CALL newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,STRESS,
-     &   hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,lambda)
+     &   trialStress,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
+     &   lambda)
         dGdS(:) = 0.0D0
         CALL calc_dGdS(hillParams,STRESS,dGdS)
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
@@ -117,15 +118,16 @@
 
       ! Newton-Raphson iteration
       SUBROUTINE newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,
-     & STRESS,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,lambda)
+     & STRESS,trialStress,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
+     & lambda)
       INCLUDE 'ABA_PARAM.INC'
       INTEGER YLDM
       DOUBLE PRECISION DDSDDE(6,6),yldCPrime(6,6),yldCDbPrime(6,6),
-     & STRESS(6),hillParams(4),HARDK,HARDN,HARDSTRAIN0,eqpStrain,lambda,
-     & TOLER,invDDSDDE(6,6),eqStress,calc_eqStress,eqGStress,
-     & calc_eqGStress,flowStress,calc_FlowStress,initialF,F,dfdS(6),
-     & dGdS(6),ddGddS(6,6),H,a0(6),b0,A(7,7),invA(7,7),vec1(7),vec2(7),
-     & vec3(7),numerator,denominator,dLambda,increment(7)
+     & STRESS(6),trialStress(6),hillParams(4),HARDK,HARDN,HARDSTRAIN0,
+     & eqpStrain,lambda,TOLER,invDDSDDE(6,6),eqStress,calc_eqStress,
+     & eqGStress,calc_eqGStress,flowStress,calc_FlowStress,initialF,F,
+     & dfdS(6),dGdS(6),ddGddS(6,6),H,a0(6),b0,A(7,7),invA(7,7),vec1(7),
+     & vec2(7),vec3(7),numerator,denominator,dLambda,increment(7)
       PARAMETER(TOLER=1.0D-1)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
       eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
