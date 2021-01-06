@@ -105,7 +105,7 @@
       DO WHILE (iterationNum < numSubSteps)
         dGdS(:) = 0.0D0
         CALL calc_dGdS(hillParams,STRESS,dGdS)
-        
+
         ! if not yield
         IF (F < flowStress*TOLER) THEN
           EXIT
@@ -144,7 +144,7 @@
      & STRESS,trialStress,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
      & lambda)
       INCLUDE 'ABA_PARAM.INC'
-      INTEGER YLDM
+      INTEGER YLDM,NRIterationNum
       DOUBLE PRECISION DDSDDE(6,6),yldCPrime(6,6),yldCDbPrime(6,6),
      & STRESS(6),trialStress(6),hillParams(4),HARDK,HARDN,HARDSTRAIN0,
      & eqpStrain,lambda,NRTOLER,invDDSDDE(6,6),eqStress,calc_eqStress,
@@ -162,7 +162,12 @@
         WRITE(7,*) "F is NaN"
         CALL XIT
       END IF
+      NRIterationNum = 0
       DO WHILE (F>initialF*NRTOLER)
+        IF (NRIterationNum>100000) THEN
+          WRITE(7,*) "not converged"
+          CALL XIT
+        END IF
         ! calculate differentials
         CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
         CALL calc_dGdS(hillParams,STRESS,dGdS)
@@ -205,6 +210,7 @@
           WRITE(7,*) "F is NaN"
           CALL XIT
         END IF
+        NRIterationNum = NRIterationNum + 1
       END DO
       RETURN
       END SUBROUTINE newton_raphson
