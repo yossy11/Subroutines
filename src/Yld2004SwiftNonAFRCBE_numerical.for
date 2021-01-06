@@ -30,7 +30,7 @@
 
       ! define constants
       PARAMETER(TOLER=1.0D-5,YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,HARDN=0.227D0,
-     & HARDSTRAIN0=2.5D-2,YLDM=6,numSubSteps=10)
+     & HARDSTRAIN0=2.5D-2,YLDM=6,numSubSteps=100)
 
       ! anisotropic params
       yldCPrime(:,:) = 0.0D0
@@ -133,8 +133,8 @@
       pStrain(:) = pStrain(:) + lambda*dGdS(:)
       eStrain(:) = eStrain(:) - lambda*dGdS(:)
       CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
-      CALL updateDDSDDE(hillParams,YLDM,yldCPrime,yldCDbPrime,STRESS,
-     & DDSDDE,lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
+    !   CALL updateDDSDDE(hillParams,YLDM,yldCPrime,yldCDbPrime,STRESS,
+    !  & DDSDDE,lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
       RETURN
       END SUBROUTINE UMAT
 
