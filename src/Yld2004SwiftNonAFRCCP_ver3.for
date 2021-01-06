@@ -4,6 +4,7 @@
       ! hardening rule : Swift
       ! flow rule : non-AFR
       ! integration algorithm : CCP(convex cutting plane)
+      ! using numerical differentiation for the calculation of dfdS
 
       ! Umat interface
       SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,RPL,DDSDDT,
