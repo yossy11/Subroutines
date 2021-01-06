@@ -98,7 +98,7 @@
         CALL calc_dGdS(hillParams,STRESS,dGdS)
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
         eqGStress = calc_eqGStress(hillParams,STRESS)
-        IF (iterationNum==numSubSteps-1) THEN
+        IF (iterationNum/=numSubSteps-1) THEN
           STRESS(:) = trialStress(:) - lambda*MATMUL(DDSDDE,dGdS)
           eqpStrain = trialeqpStrain + lambda*eqGStress/eqStress
         END IF
