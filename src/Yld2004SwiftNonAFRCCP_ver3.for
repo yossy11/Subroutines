@@ -27,7 +27,7 @@
      & eqGStress,calc_eqGStress,dLambda,F,H,lambda
 
       ! define constants
-      PARAMETER(TOLER=1.0D-3,YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,
+      PARAMETER(TOLER=1.0D-5,YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,
      & HARDN=0.227D0,HARDSTRAIN0=2.5D-2,YLDM=6)
 
       ! anisotropic params
@@ -111,7 +111,7 @@
         ! if yield
         eqGStress = calc_eqGStress(hillParams,STRESS)
         H = HARDK*HARDN*((HARDSTRAIN0 + eqpStrain)**(HARDN-1.0D0))
-        CALL calc_dfdS_ver2(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
+        CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
         CALL calc_dGdS(hillParams,STRESS,dGdS)
 
         ! denominator should be "DOT_PRODUCT(dfdS,MATMUL(..",
@@ -208,7 +208,7 @@
      & vec2(7),H,C(7,7),subDDSDDE(6,6)
       subDDSDDE(:,:) = DDSDDE(:,:)
       eqGStress = calc_eqGStress(hillParams,STRESS)
-      CALL calc_dfdS_ver2(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
+      CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
       CALL calc_dGdS(hillParams,STRESS,dGdS)
       CALL calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
@@ -298,59 +298,6 @@
 
       SUBROUTINE calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
       IMPLICIT NONE
-      INTEGER YLDM,i,j
-      DOUBLE PRECISION DELTAX,yldCPrime(6,6),yldCDbPrime(6,6),STRESS(6),
-     & dfdS(6),eqStress,calc_eqStress,yldSPriPrime(3),
-     & yldSPriDbPrime(3),dfdPhi,dPhidS(6),signPrime,signDbPrime,
-     & dSds(6,6),subStress(6),yldSSubPriPrime(3),yldSSubPriDbPrime(3)
-      PARAMETER(DELTAX=1.0D-6)
-      
-      eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
-      yldSPriPrime(:) = 0.0D0
-      yldSPriDbPrime(:) = 0.0D0
-      CALL calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
-     & yldSPriDbPrime,STRESS)
-
-      dfdPhi = (eqStress**(1-YLDM))/(4.0D0*YLDM)
-      
-      ! calculate dPhidS
-      dPhidS(:) = 0.0D0
-      DO i=1,3
-        DO j=1,3
-          IF (yldSPriPrime(i)- yldSPriDbPrime(j)>=0) THEN
-            signPrime = 1.0D0
-          ELSE
-            signPrime = -1.0D0
-          END IF
-          IF (yldSPriPrime(j)- yldSPriDbPrime(i)>=0) THEN
-            signDbPrime = -1.0D0
-          ELSE
-            signDbPrime = 1.0D0
-          END IF
-          dPhidS(i) = dPhidS(i) + signPrime*YLDM*
-     &     ABS(yldSPriPrime(i) - yldSPriDbPrime(j))**(YLDM-1)
-          dPhidS(i+3) = dPhidS(i+3) + signDbPrime*YLDM*
-     &     ABS(yldSPriPrime(j)- yldSPriDbPrime(i))**(YLDM-1)
-        END DO
-      END DO
-
-      ! calculate dSds
-      dSds(:,:) = 0.0D0
-      DO i=1,6
-        subStress(:) = STRESS(:)
-        subStress(i) = subStress(i)*(1.0D0+DELTAX)
-        CALL calc_Principal(yldCPrime,yldCDbPrime,yldSSubPriPrime,
-     &   yldSSubPriDbPrime,subStress)
-        dSds(1:3,i) = (yldSSubPriPrime(:) - yldSPriPrime(:))/DELTAX
-        dSds(4:6,i) = (yldSSubPriDbPrime(:) - yldSPriDbPrime(:))/DELTAX
-      END DO
-      dfdS(:) = dfdPhi*MATMUL(dPhidS,dSds)
-      RETURN
-      END SUBROUTINE calc_dfdS
-
-
-      SUBROUTINE calc_dfdS_ver2(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
-      IMPLICIT NONE
       INTEGER YLDM,i,j,k
       DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),STRESS(6),
      & dfdS(6),DELTAX,yldSPriPrime(3),yldSPriDbPrime(3),yldPhi,
@@ -387,7 +334,7 @@
       dfdPhi = (eqStress**(1-YLDM))/(4.0D0*YLDM)
       dfdS(:) = dfdPhi*dPhidS(:)
       RETURN
-      END SUBROUTINE calc_dfdS_ver2
+      END SUBROUTINE calc_dfdS
       
 
 
