@@ -205,10 +205,11 @@
         vec3(7) = eqGStress/eqStress
         denominator = DOT_PRODUCT(vec1,MATMUL(A,vec3))
         dLambda = numerator/denominator
-        IF (ISNAN(dLambda)) THEN
+        IF (ISNAN(dLambda).or.dLambda<0) THEN
           WRITE(7,*) "invalid dLambda"
           CALL XIT
         END IF
+        lambda = lambda + dLambda
 
         ! update STRESS and eqpStrain
         increment(:) = -1.0D0*MATMUL(A,vec2) - dLambda*MATMUL(A,vec3)
