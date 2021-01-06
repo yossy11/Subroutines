@@ -103,6 +103,9 @@
 
       ! return mapping method
       DO WHILE (iterationNum < numSubSteps)
+        dGdS(:) = 0.0D0
+        CALL calc_dGdS(hillParams,STRESS,dGdS)
+        
         ! if not yield
         IF (F < flowStress*TOLER) THEN
           EXIT
@@ -115,8 +118,7 @@
         CALL newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,STRESS,
      &   trialStress,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
      &   lambda)
-        dGdS(:) = 0.0D0
-        CALL calc_dGdS(hillParams,STRESS,dGdS)
+        
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
         eqGStress = calc_eqGStress(hillParams,STRESS)
         flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
