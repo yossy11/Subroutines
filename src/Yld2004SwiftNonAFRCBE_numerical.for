@@ -144,7 +144,7 @@
      & STRESS,trialStress,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
      & lambda)
       INCLUDE 'ABA_PARAM.INC'
-      INTEGER YLDM,NRIterationNum
+      INTEGER YLDM,NRIterationNum,i,j
       DOUBLE PRECISION DDSDDE(6,6),yldCPrime(6,6),yldCDbPrime(6,6),
      & STRESS(6),trialStress(6),hillParams(4),HARDK,HARDN,HARDSTRAIN0,
      & eqpStrain,lambda,NRTOLER,invDDSDDE(6,6),eqStress,calc_eqStress,
@@ -159,7 +159,7 @@
       initialF = eqStress - flowStress
       F = initialF
       IF (ISNAN(F)) THEN
-        WRITE(7,*) "F is NaN"
+        WRITE(7,*) "initialF is NaN"
         CALL XIT
       END IF
       NRIterationNum = 0
@@ -177,11 +177,25 @@
         ! calculate dLambda
         a0(:) = MATMUL(invDDSDDE,STRESS(:)-trialStress(:)) + 
      &   lambda*dGdS(:)
+        DO i=1,6
+          IF (ISNAN(a0(i))) THEN
+            WRITE(7,*) "invalid a0"
+            CALL XIT
+          END IF
+        END DO
         b0 = 0.0D0
         invA(:,:) = 0.0D0
         invA(1:6,1:6) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
         invA(7,7) = -1.0D0
-        CALL calc_Inverse(6,invA,A)
+        CALL calc_Inverse(7,invA,A)
+        DO i=1,7
+          DO j=1,7
+            IF (ISNAN(A(i,j))) THEN
+              WRITE(7,*) "invalid A"
+              CALL XIT
+            END IF
+          END DO
+        END DO
         vec1(1:6) = dfdS(:)
         vec1(7) = -1.0D0*H
         vec2(1:6) = a0(:)
@@ -191,9 +205,19 @@
         vec3(7) = eqGStress/eqStress
         denominator = DOT_PRODUCT(vec1,MATMUL(A,vec3))
         dLambda = numerator/denominator
+        IF (ISNAN(dLambda)) THEN
+          WRITE(7,*) "invalid dLambda"
+          CALL XIT
+        END IF
 
         ! update STRESS and eqpStrain
         increment(:) = -1.0D0*MATMUL(A,vec2) - dLambda*MATMUL(A,vec3)
+        DO i=1,7
+          IF (ISNAN(increment(i))) THEN
+            WRITE(7,*) "invalid increment",i
+            CALL XIT
+          END IF
+        END DO
         STRESS(:) = STRESS(:) + increment(1:6)
         eqpStrain = eqpStrain + increment(7)
         IF (increment(7)<0) THEN
