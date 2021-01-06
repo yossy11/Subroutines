@@ -86,12 +86,25 @@
 
       ! calculate trial stress
       STRESS(:) = STRESS(:) + MATMUL(DDSDDE,DSTRAN)
+      trialStress(:) = STRESS(:)
+      trialeqpStrain = eqpStrain
       iterationNum = 0
+      lambda = 0.0D0
 
       DO WHILE (iterationNum < numSubSteps)
-        CALL newton_raphson()
+        CALL newton_raphson(STRESS,eqpStrain,lambda)
+        dGdS(:) = 0.0D0
+        CALL calc_dGdS(hillParams,STRESS,dGdS)
+        eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
+        eqGStress = calc_eqGStress(hillParams,STRESS)
+        STRESS(:) = trialStress(:) - lambda*MATMUL(DDSDDE,dGdS)
+        eqpStrain = trialeqpStrain + lambda*eqGStress/eqStress
         iterationNum = iterationNum + 1
       END DO
+      pStrain(:) = pStrain(:) + lambda*dGdS(:)
+      eStrain(:) = eStrain(:) - lambda*dGdS(:)
+      CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
+      CALL updateDDSDDE()
       RETURN
       END SUBROUTINE UMAT
 
