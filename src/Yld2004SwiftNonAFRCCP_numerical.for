@@ -301,7 +301,7 @@
       DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),STRESS(6),
      & dfdS(6),DELTAX,yldSPriPrime(3),yldSPriDbPrime(3),yldPhi,
      & subStress(6),subyldPhi,dPhidS(6),eqStress,calc_eqStress,dfdPhi
-      PARAMETER(DELTAX=1.0D-6)
+      PARAMETER(DELTAX=1.0D-5)
       yldSPriPrime(:) = 0.0D0
       yldSPriDbPrime(:) = 0.0D0
       CALL calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
