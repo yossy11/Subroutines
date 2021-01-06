@@ -115,8 +115,6 @@
         CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
         CALL calc_dGdS(hillParams,STRESS,dGdS)
 
-        ! denominator should be "DOT_PRODUCT(dfdS,MATMUL(..",
-        ! but does not work for YLD2004, so use dGdS instead
         dLambda = F/(DOT_PRODUCT(dfdS,MATMUL(DDSDDE,dGdS)) + 
      &   H*eqGStress/eqStress)
         IF (dLambda<0) THEN

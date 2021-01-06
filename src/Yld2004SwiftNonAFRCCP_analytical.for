@@ -4,7 +4,8 @@
       ! hardening rule : Swift
       ! flow rule : non-AFR
       ! integration algorithm : CCP(convex cutting plane)
-      ! using analytical differentiation for the calculation of dfdS
+      ! using analytical differentiation for the calculation of dfdS,
+      ! but this doesn't work correctly(20210106), should be fixed.
 
       ! Umat interface
       SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,RPL,DDSDDT,
@@ -115,8 +116,6 @@
         CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
         CALL calc_dGdS(hillParams,STRESS,dGdS)
 
-        ! denominator should be "DOT_PRODUCT(dfdS,MATMUL(..",
-        ! but does not work for YLD2004, so use dGdS instead
         dLambda = F/(DOT_PRODUCT(dfdS,MATMUL(DDSDDE,dGdS)) + 
      &   H*eqGStress/eqStress)
         IF (dLambda<0) THEN
