@@ -145,11 +145,11 @@
       INTEGER YLDM
       DOUBLE PRECISION DDSDDE(6,6),yldCPrime(6,6),yldCDbPrime(6,6),
      & STRESS(6),trialStress(6),hillParams(4),HARDK,HARDN,HARDSTRAIN0,
-     & eqpStrain,lambda,TOLER,invDDSDDE(6,6),eqStress,calc_eqStress,
+     & eqpStrain,lambda,NRTOLER,invDDSDDE(6,6),eqStress,calc_eqStress,
      & eqGStress,calc_eqGStress,flowStress,calc_FlowStress,initialF,F,
      & dfdS(6),dGdS(6),ddGddS(6,6),H,a0(6),b0,A(7,7),invA(7,7),vec1(7),
      & vec2(7),vec3(7),numerator,denominator,dLambda,increment(7)
-      PARAMETER(TOLER=1.0D-1)
+      PARAMETER(NRTOLER=1.0D-1)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
       eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
       eqGStress = calc_eqGStress(hillParams,STRESS)
@@ -160,7 +160,7 @@
         WRITE(7,*) "F is NaN"
         CALL XIT
       END IF
-      DO WHILE (F>initialF*TOLER)
+      DO WHILE (F>initialF*NRTOLER)
         ! calculate differentials
         CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
         CALL calc_dGdS(hillParams,STRESS,dGdS)
