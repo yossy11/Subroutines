@@ -5,7 +5,7 @@
       ! flow rule : non-AFR
       ! integration algorithm : CCP(convex cutting plane)
       ! using analytical differentiation for the calculation of dfdS,
-      ! but this doesn't work correctly(20210106), should be fixed.
+      ! but this does not work correctly(20210106), should be fixed.
 
       ! Umat interface
       SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,RPL,DDSDDT,
