@@ -4,7 +4,7 @@
       ! hardening rule : Swift
       ! flow rule : non-AFR
       ! integration algorithm : CCP(convex cutting plane)
-      ! using numerical differentiation for the calculation of dfdS
+      ! using analytical differentiation for the calculation of dfdS
 
       ! Umat interface
       SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,RPL,DDSDDT,
@@ -125,7 +125,6 @@
         END IF
 
         lambda = lambda + dLambda
-
         STRESS(:) = STRESS(:) - dLambda*MATMUL(DDSDDE,dGdS)
         eqpStrain = eqpStrain + dLambda*eqGStress/eqStress
         pStrain(:) = pStrain(:) + dLambda*dGdS(:)
@@ -299,44 +298,55 @@
 
       SUBROUTINE calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
       IMPLICIT NONE
-      INTEGER YLDM,i,j,k
-      DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),STRESS(6),
-     & dfdS(6),DELTAX,yldSPriPrime(3),yldSPriDbPrime(3),yldPhi,
-     & subStress(6),subyldPhi,dPhidS(6),eqStress,calc_eqStress,dfdPhi
+      INTEGER YLDM,i,j
+      DOUBLE PRECISION DELTAX,yldCPrime(6,6),yldCDbPrime(6,6),STRESS(6),
+     & dfdS(6),eqStress,calc_eqStress,yldSPriPrime(3),
+     & yldSPriDbPrime(3),dfdPhi,dPhidS(6),signPrime,signDbPrime,
+     & dSds(6,6),subStress(6),yldSSubPriPrime(3),yldSSubPriDbPrime(3)
       PARAMETER(DELTAX=1.0D-6)
+      
+      eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
       yldSPriPrime(:) = 0.0D0
       yldSPriDbPrime(:) = 0.0D0
       CALL calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
      & yldSPriDbPrime,STRESS)
-      yldPhi = 0.0D0
+
+      dfdPhi = (eqStress**(1-YLDM))/(4.0D0*YLDM)
+      
+      ! calculate dPhidS
+      dPhidS(:) = 0.0D0
       DO i=1,3
         DO j=1,3
-          yldPhi = yldPhi + 
-     &     ABS(yldSPriPrime(i) - yldSPriDbPrime(j))**YLDM
+          IF (yldSPriPrime(i)- yldSPriDbPrime(j)>=0) THEN
+            signPrime = 1.0D0
+          ELSE
+            signPrime = -1.0D0
+          END IF
+          IF (yldSPriPrime(j)- yldSPriDbPrime(i)>=0) THEN
+            signDbPrime = -1.0D0
+          ELSE
+            signDbPrime = 1.0D0
+          END IF
+          dPhidS(i) = dPhidS(i) + signPrime*YLDM*
+     &     ABS(yldSPriPrime(i) - yldSPriDbPrime(j))**(YLDM-1)
+          dPhidS(i+3) = dPhidS(i+3) + signDbPrime*YLDM*
+     &     ABS(yldSPriPrime(j)- yldSPriDbPrime(i))**(YLDM-1)
         END DO
       END DO
+
+      ! calculate dSds
+      dSds(:,:) = 0.0D0
       DO i=1,6
         subStress(:) = STRESS(:)
-        subStress(i) = subStress(i) + DELTAX
-        yldSPriPrime(:) = 0.0D0
-        yldSPriDbPrime(:) = 0.0D0
-        CALL calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
-     &   yldSPriDbPrime,subStress)
-        subyldPhi = 0.0D0
-        DO j=1,3
-          DO k=1,3
-            subyldPhi = subyldPhi + 
-     &       ABS(yldSPriPrime(j) - yldSPriDbPrime(k))**YLDM
-          END DO
-        END DO
-        dPhidS(i) = (subyldPhi - yldPhi)/DELTAX
+        subStress(i) = subStress(i)*(1.0D0+DELTAX)
+        CALL calc_Principal(yldCPrime,yldCDbPrime,yldSSubPriPrime,
+     &   yldSSubPriDbPrime,subStress)
+        dSds(1:3,i) = (yldSSubPriPrime(:) - yldSPriPrime(:))/DELTAX
+        dSds(4:6,i) = (yldSSubPriDbPrime(:) - yldSPriDbPrime(:))/DELTAX
       END DO
-      eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
-      dfdPhi = (eqStress**(1-YLDM))/(4.0D0*YLDM)
-      dfdS(:) = dfdPhi*dPhidS(:)
+      dfdS(:) = dfdPhi*MATMUL(dPhidS,dSds)
       RETURN
       END SUBROUTINE calc_dfdS
-      
 
 
       SUBROUTINE calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
