@@ -22,14 +22,14 @@
 
       ! define variables, and their dimensions
       INTEGER i,iterationNum,YLDM,numSubSteps
-      DOUBLE PRECISION YOUNG,POISSON,HARDK,HARDN,HARDSTRAIN0,lame,
+      DOUBLE PRECISION TOLER,YOUNG,POISSON,HARDK,HARDN,HARDSTRAIN0,lame,
      & shearMod,eStrain(6),pStrain(6),eqpStrain,totalStrain(6),
      & yldCPrime(6,6),yldCDbPrime(6,6),hillParams(4),eqStress,
      & calc_eqStress,eqGStress,calc_eqGStress,flowStress,
      & calc_FlowStress,F,lambda,trialStress(6),trialeqpStrain,dGdS(6)
 
       ! define constants
-      PARAMETER(YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,HARDN=0.227D0,
+      PARAMETER(TOLER=1.0D-5,YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,HARDN=0.227D0,
      & HARDSTRAIN0=2.5D-2,YLDM=6,numSubSteps=10)
 
       ! anisotropic params
