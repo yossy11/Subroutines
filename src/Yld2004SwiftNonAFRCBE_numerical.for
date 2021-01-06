@@ -25,8 +25,8 @@
       DOUBLE PRECISION YOUNG,POISSON,HARDK,HARDN,HARDSTRAIN0,lame,
      & shearMod,eStrain(6),pStrain(6),eqpStrain,totalStrain(6),
      & yldCPrime(6,6),yldCDbPrime(6,6),hillParams(4),eqStress,
-     & calc_eqStress,eqGStress,calc_eqGStress,lambda,trialStress(6),
-     & trialeqpStrain,dGdS(6)
+     & calc_eqStress,eqGStress,calc_eqGStress,flowStress,
+     & calc_FlowStress,F,lambda,trialStress(6),trialeqpStrain,dGdS(6)
 
       ! define constants
       PARAMETER(YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,HARDN=0.227D0,
@@ -91,8 +91,27 @@
       iterationNum = 0
       lambda = 0.0D0
 
+      ! calculate eqStress and flowStress
+      eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
+      eqGStress = calc_eqGStress(hillParams,STRESS)
+      flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
+      F = eqStress - flowStress
+      IF (ISNAN(F)) THEN
+        WRITE(7,*) "F is NaN"
+        CALL XIT
+      END IF
+
       ! return mapping method
       DO WHILE (iterationNum < numSubSteps)
+        ! if not yield
+        IF (F < flowStress*TOLER) THEN
+          EXIT
+        ! if yield
+        ELSE
+          STRESS(:) = trialStress(:) - lambda*MATMUL(DDSDDE,dGdS)
+          eqpStrain = trialeqpStrain + lambda*eqGStress/eqStress
+        END IF
+        
         CALL newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,STRESS,
      &   trialStress,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
      &   lambda)
@@ -100,9 +119,11 @@
         CALL calc_dGdS(hillParams,STRESS,dGdS)
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
         eqGStress = calc_eqGStress(hillParams,STRESS)
-        IF (iterationNum/=numSubSteps-1) THEN
-          STRESS(:) = trialStress(:) - lambda*MATMUL(DDSDDE,dGdS)
-          eqpStrain = trialeqpStrain + lambda*eqGStress/eqStress
+        flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
+        F = eqStress - flowStress
+        IF (ISNAN(F)) THEN
+          WRITE(7,*) "F is NaN"
+          CALL XIT
         END IF
         iterationNum = iterationNum + 1
       END DO
