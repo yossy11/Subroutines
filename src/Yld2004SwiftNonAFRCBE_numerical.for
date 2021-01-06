@@ -92,13 +92,16 @@
       lambda = 0.0D0
 
       DO WHILE (iterationNum < numSubSteps)
-        CALL newton_raphson(STRESS,eqpStrain,lambda)
+        CALL newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,STRESS,
+     &   hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,lambda)
         dGdS(:) = 0.0D0
         CALL calc_dGdS(hillParams,STRESS,dGdS)
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
         eqGStress = calc_eqGStress(hillParams,STRESS)
-        STRESS(:) = trialStress(:) - lambda*MATMUL(DDSDDE,dGdS)
-        eqpStrain = trialeqpStrain + lambda*eqGStress/eqStress
+        IF (iterationNum==numSubSteps-1) THEN
+          STRESS(:) = trialStress(:) - lambda*MATMUL(DDSDDE,dGdS)
+          eqpStrain = trialeqpStrain + lambda*eqGStress/eqStress
+        END IF
         iterationNum = iterationNum + 1
       END DO
       pStrain(:) = pStrain(:) + lambda*dGdS(:)
@@ -109,19 +112,70 @@
       END SUBROUTINE UMAT
 
 
-      ! update
-      SUBROUTINE newton_raphson()
+      ! Newton-Raphson iteration
+      SUBROUTINE newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,
+     & STRESS,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,lambda)
       INCLUDE 'ABA_PARAM.INC'
-      INTEGER
-      DOUBLE PRECISION
-      ! calculate eqStress and flowStress
+      INTEGER YLDM
+      DOUBLE PRECISION DDSDDE(6,6),yldCPrime(6,6),yldCDbPrime(6,6),
+      STRESS(6),hillParams(4),HARDK,HARDN,HARDSTRAIN0,eqpStrain,lambda,
+      TOLER,invDDSDDE(6,6),eqStress,calc_eqStress,eqGStress,
+      calc_eqGStress,flowStress,calc_FlowStress,initialF,F,dfdS(6),
+      dGdS(6),ddGddS(6,6),H,a0(6),b0,A(7,7),invA(7,7),vec1(7),vec2(7),
+      vec3(7),numerator,denominator,dLambda,increment(7)
+      PARAMETER(TOLER=1.0D-1)
+      CALL calc_Inverse(6,DDSDDE,invDDSDDE)
       eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
+      eqGStress = calc_eqGStress(hillParams,STRESS)
       flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
-      F = eqStress - flowStress
+      initialF = eqStress - flowStress
+      F = initialF
       IF (ISNAN(F)) THEN
         WRITE(7,*) "F is NaN"
         CALL XIT
       END IF
+      DO WHILE (F>initialF*TOLER)
+        CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
+        CALL calc_dGdS(hillParams,STRESS,dGdS)
+        CALL calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
+        H = HARDK*HARDN*((HARDSTRAIN0 + eqpStrain)**(HARDN-1.0D0))
+
+        a0(:) = MATMUL(invDDSDDE,STRESS(:)-trialStress(:)) + 
+     &   lambda*dGdS(:)
+        b0 = 0
+        invA(:,:) = 0.0D0
+        invA(1:6,1:6) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
+        invA(7,7) = -1.0D0
+        CALL calc_Inverse(6,invA,A)
+        vec1(1:6) = dfdS(:)
+        vec1(7) = -1.0D0*H
+        vec2(1:6) = a0(:)
+        vec2(7) = b0
+        numerator = F - DOT_PRODUCT(vec1,MATMUL(A,vec2))
+        vec3(1:6) = dGdS(:)
+        vec3(7) = eqGStress/eqStress
+        denominator = DOT_PRODUCT(vec1,MATMUL(A,vec3))
+        dLambda = numerator/denominator
+        eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
+        eqGStress = calc_eqGStress(hillParams,STRESS)
+        increment(:) = -1.0D0*MATMUL(A,vec2) - dLambda*MATMUL(A,vec3)
+        STRESS = STRESS + increment(1:6)
+        eqpStrain = eqpStrain + increment(7)
+        IF (increment(7)<0) THEN
+          WRITE(7,*) "increment of eqpStrain is invalid"
+          CALL XIT
+        END IF
+
+        ! prepare for next loop
+        eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
+        eqGStress = calc_eqGStress(hillParams,STRESS)
+        flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
+        F = eqStress - flowStress
+        IF (ISNAN(F)) THEN
+          WRITE(7,*) "F is NaN"
+          CALL XIT
+        END IF
+      END DO
       RETURN
       END SUBROUTINE newton_raphson
 
