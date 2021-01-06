@@ -5,7 +5,7 @@
       ! flow rule : non-AFR
       ! integration algorithm : CBE(classical backward euler)
       ! using numerical differentiation for the calculation of dfdS
-      ! under construction
+      ! ToDo: fix b0(variable used in newton-raphson iteration scheme)
 
       ! Umat interface
       SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,RPL,DDSDDT,
@@ -91,6 +91,7 @@
       iterationNum = 0
       lambda = 0.0D0
 
+      ! return mapping method
       DO WHILE (iterationNum < numSubSteps)
         CALL newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,STRESS,
      &   hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,lambda)
@@ -104,10 +105,12 @@
         END IF
         iterationNum = iterationNum + 1
       END DO
+
       pStrain(:) = pStrain(:) + lambda*dGdS(:)
       eStrain(:) = eStrain(:) - lambda*dGdS(:)
       CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
-      CALL updateDDSDDE()
+      CALL updateDDSDDE(hillParams,YLDM,yldCPrime,yldCDbPrime,STRESS,
+     & DDSDDE,lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
       RETURN
       END SUBROUTINE UMAT
 
@@ -135,14 +138,16 @@
         CALL XIT
       END IF
       DO WHILE (F>initialF*TOLER)
+        ! calculate differentials
         CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
         CALL calc_dGdS(hillParams,STRESS,dGdS)
         CALL calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
         H = HARDK*HARDN*((HARDSTRAIN0 + eqpStrain)**(HARDN-1.0D0))
 
+        ! calculate dLambda
         a0(:) = MATMUL(invDDSDDE,STRESS(:)-trialStress(:)) + 
      &   lambda*dGdS(:)
-        b0 = 0
+        b0 = 0.0D0
         invA(:,:) = 0.0D0
         invA(1:6,1:6) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
         invA(7,7) = -1.0D0
@@ -156,10 +161,10 @@
         vec3(7) = eqGStress/eqStress
         denominator = DOT_PRODUCT(vec1,MATMUL(A,vec3))
         dLambda = numerator/denominator
-        eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
-        eqGStress = calc_eqGStress(hillParams,STRESS)
+
+        ! update STRESS and eqpStrain
         increment(:) = -1.0D0*MATMUL(A,vec2) - dLambda*MATMUL(A,vec3)
-        STRESS = STRESS + increment(1:6)
+        STRESS(:) = STRESS(:) + increment(1:6)
         eqpStrain = eqpStrain + increment(7)
         IF (increment(7)<0) THEN
           WRITE(7,*) "increment of eqpStrain is invalid"
@@ -285,7 +290,7 @@
       END SUBROUTINE updateDDSDDE
 
 
-      ! calculate differential of plastic potential
+      ! calculate first derivatives of plastic potential
       SUBROUTINE calc_dGdS(hillParams,STRESS,dGdS)
       IMPLICIT NONE
       DOUBLE PRECISION hillParams(4),STRESS(6),dGdS(6),eqGStress,
@@ -306,7 +311,7 @@
       END SUBROUTINE calc_dGdS
 
 
-      ! calculate differential of plastic potential
+      ! calculate second derivatives of plastic potential
       SUBROUTINE calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
       IMPLICIT NONE
       INTEGER i,j
@@ -338,6 +343,7 @@
       END SUBROUTINE calc_ddGddS
 
 
+      ! calculate first derivatives of yield function
       SUBROUTINE calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
       IMPLICIT NONE
       INTEGER YLDM,i,j,k
@@ -379,9 +385,9 @@
       END SUBROUTINE calc_dfdS
       
 
-
+      ! calculate principal value of stress tensor
       SUBROUTINE calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
-     &   yldSPriDbPrime,STRESS)
+     & yldSPriDbPrime,STRESS)
       INCLUDE 'ABA_PARAM.INC'
       INTEGER i
       DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),yldSPriPrime(3),
