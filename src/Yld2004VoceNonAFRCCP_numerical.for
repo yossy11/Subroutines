@@ -20,45 +20,45 @@
      & PROPS(NPROPS),COORDS(3),DROT(3,3),DFGRD0(3,3),DFGRD1(3,3)
 
       ! define variables, and their dimensions
-      INTEGER i,iterationNum,YLDM
+      INTEGER i,iterationNum
       DOUBLE PRECISION TOLER,YOUNG,POISSON,HARDK,HARDN,HARDSTRAIN0,lame,
      & shearMod,eStrain(6),pStrain(6),eqpStrain,totalStrain(6),
      & yldCPrime(6,6),yldCDbPrime(6,6),hillParams(4),eqStress,
      & flowStress,calc_eqStress,calc_FlowStress,dfdS(6),dGdS(6),
-     & eqGStress,calc_eqGStress,dLambda,F,H,lambda
+     & eqGStress,calc_eqGStress,dLambda,F,H,lambda,YLDM
 
       ! define constants
-      PARAMETER(TOLER=1.0D-5,YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,
-     & HARDN=0.227D0,HARDSTRAIN0=2.5D-2,YLDM=6)
+      PARAMETER(TOLER=1.0D-5,YOUNG=6.9D4,POISSON=0.33D0,HARDQ=292.0D0,
+     & HARDB=6.18D0,HARDSTRESS0=141.0D0,YLDM=8.4D0)
 
       ! anisotropic params
       yldCPrime(:,:) = 0.0D0
       yldCDbPrime(:,:) = 0.0D0
 
-      yldCPrime(1,2) = 0.0698D0
-      yldCPrime(1,3) = -0.9364D0
-      yldCPrime(2,1) = -0.0791D0
-      yldCPrime(2,3) = -1.0030D0
-      yldCPrime(3,1) = -0.5247D0
-      yldCPrime(3,2) = -1.3631D0
-      yldCPrime(4,4) = 0.9543D0
-      yldCPrime(5,5) = 1.0690D0
-      yldCPrime(6,6) = 1.0237D0
+      yldCPrime(1,2) = -0.805D0
+      yldCPrime(1,3) = -0.634D0
+      yldCPrime(2,1) = -0.937D0
+      yldCPrime(2,3) = -0.292D0
+      yldCPrime(3,1) = -0.836D0
+      yldCPrime(3,2) = -0.715D0
+      yldCPrime(4,4) = 1.000D0
+      yldCPrime(5,5) = 1.000D0
+      yldCPrime(6,6) = 0.614D0
 
-      yldCDbPrime(1,2) = -0.9811D0
-      yldCDbPrime(1,3) = -0.4767D0
-      yldCDbPrime(2,1) = -0.5753D0
-      yldCDbPrime(2,3) = -0.8668D0
-      yldCDbPrime(3,1) = -1.1450D0
-      yldCDbPrime(3,2) = 0.0792D0
-      yldCDbPrime(4,4) = 1.4046D0
-      yldCDbPrime(5,5) = 1.1471D0
-      yldCDbPrime(6,6) = 1.0516D0
+      yldCDbPrime(1,2) = -0.675D0
+      yldCDbPrime(1,3) = -1.119D0
+      yldCDbPrime(2,1) = -1.070D0
+      yldCDbPrime(2,3) = -1.247D0
+      yldCDbPrime(3,1) = -0.889D0
+      yldCDbPrime(3,2) = -1.078D0
+      yldCDbPrime(4,4) = 1.000D0
+      yldCDbPrime(5,5) = 1.000D0
+      yldCDbPrime(6,6) = 1.178D0
 
-      hillParams(1) = 0.25216953733566727
-      hillParams(2) = 0.8254230293025175
-      hillParams(3) = 0.17457697069748246
-      hillParams(4) = 2.2380520016508463
+      hillParams(1) = 0.36784658988120367
+      hillParams(2) = 0.6211180124223603
+      hillParams(3) = 0.37888198757763975
+      hillParams(4) = 1.0581921244648134
 
       ! this subroutine can be used only on the condition of NDI=NSHR=3
       IF (NDI/=3 .or. NSHR/=3) THEN
@@ -91,7 +91,7 @@
       DO WHILE (iterationNum < 1000000)
         ! calculate eqStress and flowStress
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
-        flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
+        flowStress = calc_FlowStress(HARDQ,HARDSTRESS0,HARDB,eqpStrain)
         F = eqStress - flowStress
         IF (ISNAN(F)) THEN
           WRITE(7,*) "F is NaN"
@@ -103,7 +103,7 @@
           CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
           IF (iterationNum /= 0) THEN
             CALL updateDDSDDE(hillParams,YLDM,yldCPrime,yldCDbPrime,
-     &       STRESS,DDSDDE,lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,
+     &       STRESS,DDSDDE,lambda,eqStress,HARDQ,HARDB,HARDSTRESS0,
      &       eqpStrain)
           END IF
           RETURN
@@ -111,7 +111,7 @@
 
         ! if yield
         eqGStress = calc_eqGStress(hillParams,STRESS)
-        H = HARDK*HARDN*((HARDSTRAIN0 + eqpStrain)**(HARDN-1.0D0))
+        H = HARDQ*HARDB*EXP(-1.0D0*HARDB*eqpStrain)
         CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
         CALL calc_dGdS(hillParams,STRESS,dGdS)
 
@@ -141,9 +141,9 @@
       DOUBLE PRECISION FUNCTION calc_eqStress(YLDM,yldCPrime,
      & yldCDbPrime,STRESS)
       IMPLICIT NONE
-      INTEGER YLDM,i,j
+      INTEGER i,j
       DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),STRESS(6),
-     & yldSPriPrime(3),yldSPriDbPrime(3),yldPhi
+     & yldSPriPrime(3),yldSPriDbPrime(3),yldPhi,YLDM
       yldSPriPrime(:) = 0.0D0
       yldSPriDbPrime(:) = 0.0D0
       CALL calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
@@ -174,11 +174,11 @@
 
 
       ! calculate flow stress
-      DOUBLE PRECISION FUNCTION calc_FlowStress(HARDQ,HARDSTRAIN0,
+      DOUBLE PRECISION FUNCTION calc_FlowStress(HARDQ,HARDSTRESS0,
      & HARDB,eqpStrain)
       IMPLICIT NONE
-      DOUBLE PRECISION HARDQ,HARDSTRAIN0,HARDB,eqpStrain
-      calc_FlowStress = HARDSTRAIN0 + 
+      DOUBLE PRECISION HARDQ,HARDSTRESS0,HARDB,eqpStrain
+      calc_FlowStress = HARDSTRESS0 + 
      & HARDQ*(1.0D0-EXP(-1.0D0*HARDB*eqpStrain))
       RETURN
       END FUNCTION calc_FlowStress
@@ -198,14 +198,14 @@
 
       ! update tangent modulus
       SUBROUTINE updateDDSDDE(hillParams,YLDM,yldCPrime,yldCDbPrime,
-     & STRESS,DDSDDE,lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
+     & STRESS,DDSDDE,lambda,eqStress,HARDQ,HARDB,HARDSTRESS0,eqpStrain)
       IMPLICIT NONE
-      INTEGER YLDM,i,j
+      INTEGER i,j
       DOUBLE PRECISION hillParams(4),yldCPrime(6,6),yldCDbPrime(6,6),
      & STRESS(6),DDSDDE(6,6),lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,
      & eqpStrain,eqGStress,calc_eqGStress,dfdS(6),dGdS(6),ddGddS(6,6),
      & A(7,7),B(6,6),invB(6,6),invDDSDDE(6,6),h0,subVec(7),vec1(7),
-     & vec2(7),H,C(7,7),subDDSDDE(6,6)
+     & vec2(7),H,C(7,7),subDDSDDE(6,6),YLDM
       subDDSDDE(:,:) = DDSDDE(:,:)
       eqGStress = calc_eqGStress(hillParams,STRESS)
       CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
@@ -226,7 +226,7 @@
       subVec(7) = 0.0D0
       vec2 = MATMUL(subVec,A)
       CALL calc_Dyad(7,vec1,vec2,C)
-      H = HARDK*HARDN*((HARDSTRAIN0 + eqpStrain)**(HARDN-1.0D0))
+      H = HARDQ*HARDB*EXP(-1.0D0*HARDB*eqpStrain)
       C(:,:) = C(:,:)/
      & (DOT_PRODUCT(dfdS,MATMUL(B,dGdS)) + H*h0)
       A(:,:) = A(:,:) - C(:,:)
@@ -298,9 +298,9 @@
 
       SUBROUTINE calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
       IMPLICIT NONE
-      INTEGER YLDM,i,j,k
+      INTEGER i,j,k
       DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),STRESS(6),
-     & dfdS(6),DELTAX,yldSPriPrime(3),yldSPriDbPrime(3),yldPhi,
+     & dfdS(6),DELTAX,yldSPriPrime(3),yldSPriDbPrime(3),yldPhi,YLDM,
      & subStress(6),subyldPhi,dPhidS(6),eqStress,calc_eqStress,dfdPhi
       PARAMETER(DELTAX=1.0D-5)
       yldSPriPrime(:) = 0.0D0
