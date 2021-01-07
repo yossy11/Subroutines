@@ -103,6 +103,11 @@
 
       ! return mapping method
       DO WHILE (iterationNum < numSubSteps)
+        IF (iterationNum==numSubSteps-1) THEN
+          WRITE(7,*) "not converged"
+          CALL XIT
+        END IF
+
         dGdS(:) = 0.0D0
         CALL calc_dGdS(hillParams,STRESS,dGdS)
 
@@ -117,7 +122,7 @@
         
         CALL newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,STRESS,
      &   trialStress,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
-     &   lambda)
+     &   lambda,TOLER)
         
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
         eqGStress = calc_eqGStress(hillParams,STRESS)
@@ -130,6 +135,7 @@
         iterationNum = iterationNum + 1
       END DO
 
+      CALL calc_dGdS(hillParams,STRESS,dGdS)
       pStrain(:) = pStrain(:) + lambda*dGdS(:)
       eStrain(:) = eStrain(:) - lambda*dGdS(:)
       CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
@@ -142,7 +148,7 @@
       ! Newton-Raphson iteration
       SUBROUTINE newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,
      & STRESS,trialStress,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
-     & lambda)
+     & lambda,TOLER)
       INCLUDE 'ABA_PARAM.INC'
       INTEGER YLDM,NRIterationNum,i,j
       DOUBLE PRECISION DDSDDE(6,6),yldCPrime(6,6),yldCDbPrime(6,6),
@@ -150,7 +156,7 @@
      & eqpStrain,lambda,NRTOLER,invDDSDDE(6,6),eqStress,calc_eqStress,
      & eqGStress,calc_eqGStress,flowStress,calc_FlowStress,initialF,F,
      & dfdS(6),dGdS(6),ddGddS(6,6),H,a0(6),b0,A(7,7),invA(7,7),vec1(7),
-     & vec2(7),vec3(7),numerator,denominator,dLambda,increment(7)
+     & vec2(7),vec3(7),numerator,denominator,dLambda,increment(7),TOLER
       PARAMETER(NRTOLER=1.0D-1)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
       eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
@@ -165,7 +171,7 @@
       NRIterationNum = 0
       DO WHILE (F>initialF*NRTOLER)
         IF (NRIterationNum>100000) THEN
-          WRITE(7,*) "not converged"
+          WRITE(7,*) "NRiteration not converged"
           CALL XIT
         END IF
         ! calculate differentials
@@ -234,6 +240,10 @@
         IF (ISNAN(F)) THEN
           WRITE(7,*) "F is NaN"
           CALL XIT
+        END IF
+        ! if not yield
+        IF (F < flowStress*TOLER) THEN
+          EXIT
         END IF
         NRIterationNum = NRIterationNum + 1
       END DO
