@@ -1,8 +1,8 @@
       ! This is UMAT subroutine made by yossy11
       ! yield function : YLD2004-18p
-      ! plastic potential : Hill48
+      ! plastic potential : YLD2004-18p
       ! hardening rule : Swift
-      ! flow rule : non-AFR
+      ! flow rule : AFR
       ! integration algorithm : CCP(convex cutting plane)
       ! using numerical differentiation for the calculation of dfdS
 
