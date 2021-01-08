@@ -110,7 +110,8 @@
         END IF
 
         ! if yield
-        eqGStress = calc_eqGStress(hillParams,STRESS)
+        ! eqGStress = calc_eqGStress(hillParams,STRESS)
+        eqGStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
         H = HARDK*HARDN*((HARDSTRAIN0 + eqpStrain)**(HARDN-1.0D0))
         CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
         ! CALL calc_dGdS(hillParams,STRESS,dGdS)
@@ -209,21 +210,25 @@
      & STRESS(6),DDSDDE(6,6),lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,
      & eqpStrain,eqGStress,calc_eqGStress,dfdS(6),dGdS(6),ddGddS(6,6),
      & A(7,7),B(6,6),invB(6,6),invDDSDDE(6,6),h0,subVec(7),vec1(7),
-     & vec2(7),H,C(7,7),subDDSDDE(6,6)
+     & vec2(7),H,C(7,7),subDDSDDE(6,6),ddfddS(6,6)
       subDDSDDE(:,:) = DDSDDE(:,:)
-      eqGStress = calc_eqGStress(hillParams,STRESS)
+      ! eqGStress = calc_eqGStress(hillParams,STRESS)
+      eqGStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
       CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
       CALL calc_dGdS(hillParams,STRESS,dGdS)
       CALL calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
+      CALL calc_ddfddS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS,ddfddS)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
-      invB(:,:) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
+      ! invB(:,:) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
+      invB(:,:) = invDDSDDE(:,:) + lambda*ddfddS(:,:)
       CALL calc_Inverse(6,invB,B)
       A(:,:) = 0.0D0
       A(1:6,1:6) = B(:,:)
       A(7,7) = 1.0D0
       h0 = eqGStress/eqStress
       subVec(:) = 0.0D0
-      subVec(1:6) = dGdS(:)
+      ! subVec(1:6) = dGdS(:)
+      subVec(1:6) = dfdS(:)
       subVec(7) = -1.0D0*h0
       vec1 = MATMUL(A,subVec)
       subVec(1:6) = dfdS(:)
@@ -231,8 +236,10 @@
       vec2 = MATMUL(subVec,A)
       CALL calc_Dyad(7,vec1,vec2,C)
       H = HARDK*HARDN*((HARDSTRAIN0 + eqpStrain)**(HARDN-1.0D0))
+    !   C(:,:) = C(:,:)/
+    !  & (DOT_PRODUCT(dfdS,MATMUL(B,dGdS)) + H*h0)
       C(:,:) = C(:,:)/
-     & (DOT_PRODUCT(dfdS,MATMUL(B,dGdS)) + H*h0)
+     & (DOT_PRODUCT(dfdS,MATMUL(B,dfdS)) + H*h0)
       A(:,:) = A(:,:) - C(:,:)
       DDSDDE(:,:) = A(1:6,1:6)
       DO i=1,6
