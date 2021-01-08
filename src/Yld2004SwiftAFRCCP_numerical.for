@@ -113,9 +113,11 @@
         eqGStress = calc_eqGStress(hillParams,STRESS)
         H = HARDK*HARDN*((HARDSTRAIN0 + eqpStrain)**(HARDN-1.0D0))
         CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
-        CALL calc_dGdS(hillParams,STRESS,dGdS)
+        ! CALL calc_dGdS(hillParams,STRESS,dGdS)
 
-        dLambda = F/(DOT_PRODUCT(dfdS,MATMUL(DDSDDE,dGdS)) + 
+    !     dLambda = F/(DOT_PRODUCT(dfdS,MATMUL(DDSDDE,dGdS)) + 
+    !  &   H*eqGStress/eqStress)
+        dLambda = F/(DOT_PRODUCT(dfdS,MATMUL(DDSDDE,dfdS)) + 
      &   H*eqGStress/eqStress)
         IF (dLambda<0) THEN
           WRITE(7,*) "dLambda < 0, invalid!!"
@@ -124,10 +126,13 @@
 
         lambda = lambda + dLambda
 
-        STRESS(:) = STRESS(:) - dLambda*MATMUL(DDSDDE,dGdS)
+        ! STRESS(:) = STRESS(:) - dLambda*MATMUL(DDSDDE,dGdS)
+        STRESS(:) = STRESS(:) - dLambda*MATMUL(DDSDDE,dfdS)
         eqpStrain = eqpStrain + dLambda*eqGStress/eqStress
-        pStrain(:) = pStrain(:) + dLambda*dGdS(:)
-        eStrain(:) = eStrain(:) - dLambda*dGdS(:)
+        ! pStrain(:) = pStrain(:) + dLambda*dGdS(:)
+        pStrain(:) = pStrain(:) + dLambda*dfdS(:)
+        ! eStrain(:) = eStrain(:) - dLambda*dGdS(:)
+        eStrain(:) = eStrain(:) - dLambda*dfdS(:)
         iterationNum = iterationNum + 1
       END DO
       WRITE(7,*) "not converged!!!"
@@ -334,8 +339,23 @@
       dfdS(:) = dfdPhi*dPhidS(:)
       RETURN
       END SUBROUTINE calc_dfdS
-      
 
+
+      SUBROUTINE calc_ddfddS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS,ddfddS)
+      IMPLICIT NONE
+      INTEGER YLDM,i
+      DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),STRESS(6),
+     & dfdS(6),ddfddS(6,6),DELTAX,subStress(6),subdfdS(6)
+      PARAMETER(DELTAX=1.0D-1)
+      DO i=1,6
+        subStress(:) = STRESS(:)
+        subStress(i) = subStress(i) + DELTAX
+        CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,subdfdS)
+        ddfddS(:,i) = (subdfdS(:) - dfdS(:))/DELTAX
+      END DO  
+      RETURN
+      END SUBROUTINE calc_ddfddS
+      
 
       SUBROUTINE calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
      &   yldSPriDbPrime,STRESS)
