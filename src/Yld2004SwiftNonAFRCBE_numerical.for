@@ -122,7 +122,7 @@
         
         CALL newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,STRESS,
      &   trialStress,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
-     &   lambda,TOLER)
+     &   trialeqpStrain,lambda,TOLER)
         
         eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
         eqGStress = calc_eqGStress(hillParams,STRESS)
@@ -133,14 +133,17 @@
           CALL XIT
         END IF
         iterationNum = iterationNum + 1
+        WRITE(7,*) "iterationNum",iterationNum
       END DO
 
       CALL calc_dGdS(hillParams,STRESS,dGdS)
       pStrain(:) = pStrain(:) + lambda*dGdS(:)
       eStrain(:) = eStrain(:) - lambda*dGdS(:)
       CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
-    !   CALL updateDDSDDE(hillParams,YLDM,yldCPrime,yldCDbPrime,STRESS,
-    !  & DDSDDE,lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
+      IF (iterationNum/=0) THEN
+        CALL updateDDSDDE(hillParams,YLDM,yldCPrime,yldCDbPrime,STRESS,
+     & DDSDDE,lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
+      END IF
       RETURN
       END SUBROUTINE UMAT
 
@@ -148,15 +151,16 @@
       ! Newton-Raphson iteration
       SUBROUTINE newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,
      & STRESS,trialStress,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
-     & lambda,TOLER)
+     & trialeqpStrain,lambda,TOLER)
       INCLUDE 'ABA_PARAM.INC'
       INTEGER YLDM,NRIterationNum,i,j
       DOUBLE PRECISION DDSDDE(6,6),yldCPrime(6,6),yldCDbPrime(6,6),
      & STRESS(6),trialStress(6),hillParams(4),HARDK,HARDN,HARDSTRAIN0,
-     & eqpStrain,lambda,NRTOLER,invDDSDDE(6,6),eqStress,calc_eqStress,
-     & eqGStress,calc_eqGStress,flowStress,calc_FlowStress,initialF,F,
-     & dfdS(6),dGdS(6),ddGddS(6,6),H,a0(6),b0,A(7,7),invA(7,7),vec1(7),
-     & vec2(7),vec3(7),numerator,denominator,dLambda,increment(7),TOLER
+     & eqpStrain,trialeqpStrain,lambda,NRTOLER,invDDSDDE(6,6),eqStress,
+     & calc_eqStress,eqGStress,calc_eqGStress,flowStress,
+     & calc_FlowStress,initialF,F,dfdS(6),dGdS(6),ddGddS(6,6),H,a0(6),
+     & b0,A(7,7),invA(7,7),vec1(7),vec2(7),vec3(7),numerator,
+     & denominator,dLambda,increment(7),TOLER
       PARAMETER(NRTOLER=1.0D-1)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
       eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
@@ -189,7 +193,8 @@
             CALL XIT
           END IF
         END DO
-        b0 = 0.0D0
+        b0 = trialeqpStrain - eqpStrain + lambda*eqGStress/eqStress
+        ! b0 = 0.0D0
         invA(:,:) = 0.0D0
         invA(1:6,1:6) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
         invA(7,7) = -1.0D0
@@ -212,7 +217,20 @@
         denominator = DOT_PRODUCT(vec1,MATMUL(A,vec3))
         dLambda = numerator/denominator
         IF (ISNAN(dLambda).or.dLambda<0) THEN
-          WRITE(7,*) "invalid dLambda"
+          WRITE(7,*) "invalid dLambda",dLambda,numerator,denominator
+          WRITE(7,*) "vec1",vec1
+          WRITE(7,*) "vec2",vec2
+          WRITE(7,*) "vec3",vec3
+          WRITE(7,*) "STRESS",STRESS
+          WRITE(7,*) "lambda",lambda
+          WRITE(7,*) "eqpStrain",eqpStrain
+          WRITE(7,*) "eqStress",eqStress
+          WRITE(7,*) "eqGStress",eqGStress
+          WRITE(7,*) "flowStress",flowStress
+          WRITE(7,*) "F",F
+          WRITE(7,*) "ddGddS",ddGddS
+          WRITE(7,*) "A",A
+          WRITE(7,*) "NRIterationNum",NRIterationNum
           CALL XIT
         END IF
         lambda = lambda + dLambda
@@ -229,6 +247,10 @@
         eqpStrain = eqpStrain + increment(7)
         IF (increment(7)<0) THEN
           WRITE(7,*) "increment of eqpStrain is invalid"
+          WRITE(7,*) "dLambda",dLambda
+          WRITE(7,*) "left",MATMUL(A,vec2)
+          WRITE(7,*) "right",MATMUL(A,vec3)
+          WRITE(7,*) increment
           CALL XIT
         END IF
 
@@ -239,6 +261,10 @@
         F = eqStress - flowStress
         IF (ISNAN(F)) THEN
           WRITE(7,*) "F is NaN"
+          CALL XIT
+        END IF
+        IF (F>initialF) THEN
+          WRITE(7,*) "NRiteration diverged"
           CALL XIT
         END IF
         ! if not yield
