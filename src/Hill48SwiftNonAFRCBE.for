@@ -20,45 +20,27 @@
      & PROPS(NPROPS),COORDS(3),DROT(3,3),DFGRD0(3,3),DFGRD1(3,3)
 
       ! define variables, and their dimensions
-      INTEGER i,iterationNum,YLDM,numSubSteps
+      INTEGER i,iterationNum,numSubSteps
       DOUBLE PRECISION TOLER,YOUNG,POISSON,HARDK,HARDN,HARDSTRAIN0,lame,
      & shearMod,eStrain(6),pStrain(6),eqpStrain,totalStrain(6),
-     & yldCPrime(6,6),yldCDbPrime(6,6),hillParams(4),eqStress,
-     & calc_eqStress,eqGStress,calc_eqGStress,flowStress,
-     & calc_FlowStress,F,lambda,trialStress(6),trialeqpStrain,dGdS(6)
+     & hillFParams(4),hillGParams(4),eqStress,calc_eqStress,eqGStress,
+     & calc_eqGStress,flowStress,calc_FlowStress,F,lambda,
+     & trialStress(6),trialeqpStrain,dGdS(6)
 
       ! define constants
-      PARAMETER(TOLER=1.0D-5,YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,HARDN=0.227D0,
-     & HARDSTRAIN0=2.5D-2,YLDM=6,numSubSteps=100)
+      PARAMETER(TOLER=1.0D-5,YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,
+     & HARDN=0.227D0,HARDSTRAIN0=2.5D-2,YLDM=6,numSubSteps=100)
 
       ! anisotropic params
-      yldCPrime(:,:) = 0.0D0
-      yldCDbPrime(:,:) = 0.0D0
+      hillFParams(1) = 0.570281847241541
+      hillFParams(2) = 0.3632288531248622
+      hillFParams(3) = 0.6367711468751378
+      hillFParams(4) = 2.5710503236965727
 
-      yldCPrime(1,2) = 0.0698D0
-      yldCPrime(1,3) = -0.9364D0
-      yldCPrime(2,1) = -0.0791D0
-      yldCPrime(2,3) = -1.0030D0
-      yldCPrime(3,1) = -0.5247D0
-      yldCPrime(3,2) = -1.3631D0
-      yldCPrime(4,4) = 0.9543D0
-      yldCPrime(5,5) = 1.0690D0
-      yldCPrime(6,6) = 1.0237D0
-
-      yldCDbPrime(1,2) = -0.9811D0
-      yldCDbPrime(1,3) = -0.4767D0
-      yldCDbPrime(2,1) = -0.5753D0
-      yldCDbPrime(2,3) = -0.8668D0
-      yldCDbPrime(3,1) = -1.1450D0
-      yldCDbPrime(3,2) = 0.0792D0
-      yldCDbPrime(4,4) = 1.4046D0
-      yldCDbPrime(5,5) = 1.1471D0
-      yldCDbPrime(6,6) = 1.0516D0
-
-      hillParams(1) = 0.25216953733566727
-      hillParams(2) = 0.8254230293025175
-      hillParams(3) = 0.17457697069748246
-      hillParams(4) = 2.2380520016508463
+      hillGParams(1) = 0.25216953733566727
+      hillGParams(2) = 0.8254230293025175
+      hillGParams(3) = 0.17457697069748246
+      hillGParams(4) = 2.2380520016508463
 
       ! this subroutine can be used only on the condition of NDI=NSHR=3
       IF (NDI/=3 .or. NSHR/=3) THEN
@@ -91,8 +73,8 @@
       lambda = 0.0D0
 
       ! calculate eqStress and flowStress
-      eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
-      eqGStress = calc_eqGStress(hillParams,STRESS)
+      eqStress = calc_eqStress(hillFParams,STRESS)
+      eqGStress = calc_eqGStress(hillGParams,STRESS)
       flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
       F = eqStress - flowStress
       IF (ISNAN(F)) THEN
@@ -108,7 +90,7 @@
         END IF
 
         dGdS(:) = 0.0D0
-        CALL calc_dGdS(hillParams,STRESS,dGdS)
+        CALL calc_dGdS(hillGParams,STRESS,dGdS)
 
         ! if not yield
         IF (F < flowStress*TOLER) THEN
@@ -119,12 +101,11 @@
           eqpStrain = trialeqpStrain + lambda*eqGStress/eqStress
         END IF
         
-        CALL newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,STRESS,
-     &   trialStress,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
-     &   trialeqpStrain,lambda,TOLER)
-        
-        eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
-        eqGStress = calc_eqGStress(hillParams,STRESS)
+        CALL newton_raphson(DDSDDE,STRESS,trialStress,hillFParams,
+     & hillGParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,trialeqpStrain,
+     & lambda,TOLER)
+        eqStress = calc_eqStress(hillFParams,STRESS)
+        eqGStress = calc_eqGStress(hillGParams,STRESS)
         flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
         F = eqStress - flowStress
         IF (ISNAN(F)) THEN
@@ -134,35 +115,35 @@
         iterationNum = iterationNum + 1
       END DO
 
-      CALL calc_dGdS(hillParams,STRESS,dGdS)
+      CALL calc_dGdS(hillGParams,STRESS,dGdS)
       pStrain(:) = pStrain(:) + lambda*dGdS(:)
       eStrain(:) = eStrain(:) - lambda*dGdS(:)
       CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
       IF (iterationNum/=0) THEN
-        CALL updateDDSDDE(hillParams,YLDM,yldCPrime,yldCDbPrime,STRESS,
-     & DDSDDE,lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
+        CALL updateDDSDDE(hillFParams,hillGParams,STRESS,DDSDDE,lambda,
+     &   eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
       END IF
       RETURN
       END SUBROUTINE UMAT
 
 
       ! Newton-Raphson iteration
-      SUBROUTINE newton_raphson(DDSDDE,YLDM,yldCPrime,yldCDbPrime,
-     & STRESS,trialStress,hillParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
-     & trialeqpStrain,lambda,TOLER)
+      SUBROUTINE newton_raphson(DDSDDE,STRESS,trialStress,hillFParams,
+     & hillGParams,HARDK,HARDN,HARDSTRAIN0,eqpStrain,trialeqpStrain,
+     & lambda,TOLER)
       INCLUDE 'ABA_PARAM.INC'
-      INTEGER YLDM,NRIterationNum,i,j
-      DOUBLE PRECISION DDSDDE(6,6),yldCPrime(6,6),yldCDbPrime(6,6),
-     & STRESS(6),trialStress(6),hillParams(4),HARDK,HARDN,HARDSTRAIN0,
-     & eqpStrain,trialeqpStrain,lambda,NRTOLER,invDDSDDE(6,6),eqStress,
+      INTEGER NRIterationNum,i,j
+      DOUBLE PRECISION DDSDDE(6,6),STRESS(6),trialStress(6),
+     & hillFParams(4),hillGParams(4),HARDK,HARDN,HARDSTRAIN0,eqpStrain,
+     & trialeqpStrain,lambda,NRTOLER,invDDSDDE(6,6),eqStress,
      & calc_eqStress,eqGStress,calc_eqGStress,flowStress,
      & calc_FlowStress,initialF,F,dfdS(6),dGdS(6),ddGddS(6,6),H,a0(6),
      & b0,A(7,7),invA(7,7),vec1(7),vec2(7),vec3(7),numerator,
      & denominator,dLambda,increment(7),TOLER
       PARAMETER(NRTOLER=5.0D-1)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
-      eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
-      eqGStress = calc_eqGStress(hillParams,STRESS)
+      eqStress = calc_eqStress(hillFParams,STRESS)
+      eqGStress = calc_eqGStress(hillGParams,STRESS)
       flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
       initialF = eqStress - flowStress
       F = initialF
@@ -177,9 +158,9 @@
           CALL XIT
         END IF
         ! calculate differentials
-        CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
-        CALL calc_dGdS(hillParams,STRESS,dGdS)
-        CALL calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
+        CALL calc_dfdS(hillFParams,STRESS,dfdS)
+        CALL calc_dGdS(hillGParams,STRESS,dGdS)
+        CALL calc_ddGddS(hillGParams,STRESS,dGdS,ddGddS)
         H = HARDK*HARDN*((HARDSTRAIN0 + eqpStrain)**(HARDN-1.0D0))
 
         ! calculate dLambda
@@ -252,8 +233,8 @@
         END IF
 
         ! prepare for next loop
-        eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
-        eqGStress = calc_eqGStress(hillParams,STRESS)
+        eqStress = calc_eqStress(hillFParams,STRESS)
+        eqGStress = calc_eqGStress(hillGParams,STRESS)
         flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
         F = eqStress - flowStress
         IF (ISNAN(F)) THEN
@@ -275,24 +256,14 @@
 
 
       ! calculate equivalent stress
-      DOUBLE PRECISION FUNCTION calc_eqStress(YLDM,yldCPrime,
-     & yldCDbPrime,STRESS)
+      DOUBLE PRECISION FUNCTION calc_eqStress(hillParams,STRESS)
       IMPLICIT NONE
-      INTEGER YLDM,i,j
-      DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),STRESS(6),
-     & yldSPriPrime(3),yldSPriDbPrime(3),yldPhi
-      yldSPriPrime(:) = 0.0D0
-      yldSPriDbPrime(:) = 0.0D0
-      CALL calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
-     & yldSPriDbPrime,STRESS)
-      yldPhi = 0.0D0
-      DO i=1,3
-        DO j=1,3
-          yldPhi = yldPhi + 
-     &     ABS(yldSPriPrime(i) - yldSPriDbPrime(j))**YLDM
-        END DO
-      END DO
-      calc_eqStress = (yldPhi/4.0D0)**(1.0D0/YLDM)
+      DOUBLE PRECISION hillParams(4),STRESS(6),numerator
+      numerator = hillParams(1)*(STRESS(2) - STRESS(3))**2 + 
+     & hillParams(2)*(STRESS(3)-STRESS(1))**2 + 
+     & hillParams(3)*(STRESS(1)-STRESS(2))**2 + 
+     & 2.0D0*hillParams(4)*SUM(STRESS(4:6)**2)
+      calc_eqGStress = SQRT(1.5D0*numerator/SUM(hillParams(1:3)))
       RETURN
       END FUNCTION calc_eqStress
 
@@ -333,20 +304,20 @@
 
 
       ! update tangent modulus
-      SUBROUTINE updateDDSDDE(hillParams,YLDM,yldCPrime,yldCDbPrime,
-     & STRESS,DDSDDE,lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
+      SUBROUTINE updateDDSDDE(hillFParams,hillGParams,STRESS,DDSDDE,
+     & lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
       IMPLICIT NONE
-      INTEGER YLDM,i,j
-      DOUBLE PRECISION hillParams(4),yldCPrime(6,6),yldCDbPrime(6,6),
-     & STRESS(6),DDSDDE(6,6),lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,
-     & eqpStrain,eqGStress,calc_eqGStress,dfdS(6),dGdS(6),ddGddS(6,6),
-     & A(7,7),B(6,6),invB(6,6),invDDSDDE(6,6),h0,subVec(7),vec1(7),
-     & vec2(7),H,C(7,7),subDDSDDE(6,6)
+      INTEGER i,j
+      DOUBLE PRECISION hillFParams(4),hillGParams(4),STRESS(6),
+     & DDSDDE(6,6),lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain,
+     & eqGStress,calc_eqGStress,dfdS(6),dGdS(6),ddGddS(6,6),A(7,7),
+     & B(6,6),invB(6,6),invDDSDDE(6,6),h0,subVec(7),vec1(7),vec2(7),
+     & H,C(7,7),subDDSDDE(6,6)
       subDDSDDE(:,:) = DDSDDE(:,:)
-      eqGStress = calc_eqGStress(hillParams,STRESS)
-      CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
-      CALL calc_dGdS(hillParams,STRESS,dGdS)
-      CALL calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
+      eqGStress = calc_eqGStress(hillGParams,STRESS)
+      CALL calc_dfdS(hillFParams,STRESS,dfdS)
+      CALL calc_dGdS(hillGParams,STRESS,dGdS)
+      CALL calc_ddGddS(hillGParams,STRESS,dGdS,ddGddS)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
       invB(:,:) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
       CALL calc_Inverse(6,invB,B)
@@ -433,69 +404,24 @@
 
 
       ! calculate first derivatives of yield function
-      SUBROUTINE calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
+      SUBROUTINE calc_dfdS(hillParams,STRESS,dfdS)
       IMPLICIT NONE
-      INTEGER YLDM,i,j,k
-      DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),STRESS(6),
-     & dfdS(6),DELTAX,yldSPriPrime(3),yldSPriDbPrime(3),yldPhi,
-     & subStress(6),subyldPhi,dPhidS(6),eqStress,calc_eqStress,dfdPhi
-      PARAMETER(DELTAX=1.0D-5)
-      yldSPriPrime(:) = 0.0D0
-      yldSPriDbPrime(:) = 0.0D0
-      CALL calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
-     & yldSPriDbPrime,STRESS)
-      yldPhi = 0.0D0
-      DO i=1,3
-        DO j=1,3
-          yldPhi = yldPhi + 
-     &     ABS(yldSPriPrime(i) - yldSPriDbPrime(j))**YLDM
-        END DO
-      END DO
-      DO i=1,6
-        subStress(:) = STRESS(:)
-        subStress(i) = subStress(i) + DELTAX
-        yldSPriPrime(:) = 0.0D0
-        yldSPriDbPrime(:) = 0.0D0
-        CALL calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
-     &   yldSPriDbPrime,subStress)
-        subyldPhi = 0.0D0
-        DO j=1,3
-          DO k=1,3
-            subyldPhi = subyldPhi + 
-     &       ABS(yldSPriPrime(j) - yldSPriDbPrime(k))**YLDM
-          END DO
-        END DO
-        dPhidS(i) = (subyldPhi - yldPhi)/DELTAX
-      END DO
-      eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
-      dfdPhi = (eqStress**(1-YLDM))/(4.0D0*YLDM)
-      dfdS(:) = dfdPhi*dPhidS(:)
+      DOUBLE PRECISION hillParams(4),STRESS(6),dfdS(6),eqStress,
+     & calc_eqStress,multiplier
+      eqStress = calc_eqStress(hillParams,STRESS)
+      multiplier = 0.75/(SUM(hillParams(1:3))*eqStress)
+      dfdS(1) = -1.0D0*2*hillParams(2)*(STRESS(3)-STRESS(1))+
+     & 2*hillParams(3)*(STRESS(1)-STRESS(2))
+      dfdS(2) = 2*hillParams(1)*(STRESS(2)-STRESS(3))-
+     & 2*hillParams(3)*(STRESS(1)-STRESS(2))
+      dfdS(3) = -1.0D0*2*hillParams(1)*(STRESS(2)-STRESS(3))+
+     & 2*hillParams(2)*(STRESS(3)-STRESS(1))
+      dfdS(4) = 4*hillParams(4)*STRESS(4)
+      dfdS(5) = 4*hillParams(4)*STRESS(5)
+      dfdS(6) = 4*hillParams(4)*STRESS(6)
+      dfdS(:) = dfdS(:) * multiplier
       RETURN
       END SUBROUTINE calc_dfdS
-      
-
-      ! calculate principal value of stress tensor
-      SUBROUTINE calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
-     & yldSPriDbPrime,STRESS)
-      INCLUDE 'ABA_PARAM.INC'
-      INTEGER i
-      DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),yldSPriPrime(3),
-     & yldSPriDbPrime(3),STRESS(6),yldT(6,6),yldSPrime(6),yldSDbPrime(6)
-      yldT(:,:) = 0.0D0
-      yldT(1:3,1:3) = -1.0D0
-      DO i=1,3
-        yldT(i,i) = 2.0D0
-        yldT(i+3,i+3) = 3.0D0
-      END DO
-      yldT(:,:) = yldT(:,:)/3.0D0
-      yldSPrime = MATMUL(yldCPrime,MATMUL(yldT,STRESS))
-      yldSDbPrime = MATMUL(yldCDbPrime,MATMUL(yldT,STRESS))
-      yldSPriPrime(:) = 0.0D0
-      yldSPriDbPrime(:) = 0.0D0
-      CALL SPRINC(yldSPrime,yldSPriPrime,1,3,3)
-      CALL SPRINC(yldSDbPrime,yldSPriDbPrime,1,3,3)
-      RETURN
-      END SUBROUTINE calc_Principal
 
 
       ! calculate inverse matrix
