@@ -161,7 +161,7 @@
      & calc_FlowStress,initialF,F,dfdS(6),dGdS(6),ddGddS(6,6),H,a0(6),
      & b0,A(7,7),invA(7,7),vec1(7),vec2(7),vec3(7),numerator,
      & denominator,dLambda,increment(7),TOLER
-      PARAMETER(NRTOLER=1.0D-1)
+      PARAMETER(NRTOLER=5.0D-1)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
       eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
       eqGStress = calc_eqGStress(hillParams,STRESS)
@@ -194,7 +194,6 @@
           END IF
         END DO
         b0 = trialeqpStrain - eqpStrain + lambda*eqGStress/eqStress
-        ! b0 = 0.0D0
         invA(:,:) = 0.0D0
         invA(1:6,1:6) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
         invA(7,7) = -1.0D0
@@ -264,7 +263,7 @@
           CALL XIT
         END IF
         IF (F>initialF) THEN
-          WRITE(7,*) "NRiteration diverged"
+          WRITE(7,*) "NRiteration diverged",NRIterationNum
           CALL XIT
         END IF
         ! if not yield
