@@ -263,7 +263,7 @@
      & hillParams(2)*(STRESS(3)-STRESS(1))**2 + 
      & hillParams(3)*(STRESS(1)-STRESS(2))**2 + 
      & 2.0D0*hillParams(4)*SUM(STRESS(4:6)**2)
-      calc_eqGStress = SQRT(1.5D0*numerator/SUM(hillParams(1:3)))
+      calc_eqStress = SQRT(1.5D0*numerator/SUM(hillParams(1:3)))
       RETURN
       END FUNCTION calc_eqStress
 
