@@ -29,8 +29,8 @@
      & calc_FlowStress,F,lambda,trialStress(6),trialeqpStrain,dGdS(6)
 
       ! define constants
-      PARAMETER(TOLER=1.0D-5,YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,HARDN=0.227D0,
-     & HARDSTRAIN0=2.5D-2,YLDM=6,numSubSteps=100)
+      PARAMETER(TOLER=1.0D-5,YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,
+     & HARDN=0.227D0,HARDSTRAIN0=2.5D-2,YLDM=6,numSubSteps=100)
 
       ! anisotropic params
       yldCPrime(:,:) = 0.0D0
