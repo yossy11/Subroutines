@@ -21,7 +21,7 @@
 
       ! define variables, and their dimensions
       INTEGER i,iterationNum
-      DOUBLE PRECISION TOLER,YOUNG,POISSON,HARDK,HARDN,HARDSTRAIN0,lame,
+      DOUBLE PRECISION TOLER,YOUNG,POISSON,HARDQ,HARDB,HARDSTRESS0,lame,
      & shearMod,eStrain(6),pStrain(6),eqpStrain,totalStrain(6),
      & yldCPrime(6,6),yldCDbPrime(6,6),hillParams(4),eqStress,
      & flowStress,calc_eqStress,calc_FlowStress,dfdS(6),dGdS(6),
@@ -202,7 +202,7 @@
       IMPLICIT NONE
       INTEGER i,j
       DOUBLE PRECISION hillParams(4),yldCPrime(6,6),yldCDbPrime(6,6),
-     & STRESS(6),DDSDDE(6,6),lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,
+     & STRESS(6),DDSDDE(6,6),lambda,eqStress,HARDQ,HARDB,HARDSTRESS0,
      & eqpStrain,eqGStress,calc_eqGStress,dfdS(6),dGdS(6),ddGddS(6,6),
      & A(7,7),B(6,6),invB(6,6),invDDSDDE(6,6),h0,subVec(7),vec1(7),
      & vec2(7),H,C(7,7),subDDSDDE(6,6),YLDM
