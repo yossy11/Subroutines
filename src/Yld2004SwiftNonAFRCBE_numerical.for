@@ -133,7 +133,6 @@
           CALL XIT
         END IF
         iterationNum = iterationNum + 1
-        WRITE(7,*) "iterationNum",iterationNum
       END DO
 
       CALL calc_dGdS(hillParams,STRESS,dGdS)
