@@ -210,7 +210,7 @@
      & STRESS(6),DDSDDE(6,6),lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,
      & eqpStrain,eqGStress,calc_eqGStress,dfdS(6),dGdS(6),ddGddS(6,6),
      & A(7,7),B(6,6),invB(6,6),invDDSDDE(6,6),h0,subVec(7),vec1(7),
-     & vec2(7),H,C(7,7),subDDSDDE(6,6),ddfddS(6,6)
+     & vec2(7),H,C(7,7),subDDSDDE(6,6),ddfddS(6,6),calc_eqStress
       subDDSDDE(:,:) = DDSDDE(:,:)
       ! eqGStress = calc_eqGStress(hillParams,STRESS)
       eqGStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
@@ -348,7 +348,8 @@
       END SUBROUTINE calc_dfdS
 
 
-      SUBROUTINE calc_ddfddS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS,ddfddS)
+      SUBROUTINE calc_ddfddS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS,
+     & ddfddS)
       IMPLICIT NONE
       INTEGER YLDM,i
       DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),STRESS(6),
