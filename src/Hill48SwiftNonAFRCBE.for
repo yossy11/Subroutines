@@ -172,7 +172,9 @@
             CALL XIT
           END IF
         END DO
-        b0 = trialeqpStrain - eqpStrain + lambda*eqGStress/eqStress
+        ! b0 = trialeqpStrain - eqpStrain + lambda*eqGStress/eqStress
+        b0 = trialeqpStrain - eqpStrain + lambda
+
         invA(:,:) = 0.0D0
         invA(1:6,1:6) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
         invA(7,7) = -1.0D0
@@ -191,7 +193,9 @@
         vec2(7) = b0
         numerator = F - DOT_PRODUCT(vec1,MATMUL(A,vec2))
         vec3(1:6) = dGdS(:)
-        vec3(7) = eqGStress/eqStress
+        ! vec3(7) = eqGStress/eqStress
+        vec3(7) = 1.0D0
+
         denominator = DOT_PRODUCT(vec1,MATMUL(A,vec3))
         dLambda = numerator/denominator
         IF (ISNAN(dLambda).or.dLambda<0) THEN
@@ -214,6 +218,7 @@
         lambda = lambda + dLambda
 
         ! update STRESS and eqpStrain
+        vec2(7) = 0.0D0
         increment(:) = -1.0D0*MATMUL(A,vec2) - dLambda*MATMUL(A,vec3)
         DO i=1,7
           IF (ISNAN(increment(i))) THEN
@@ -224,7 +229,7 @@
         STRESS(:) = STRESS(:) + increment(1:6)
         eqpStrain = eqpStrain + increment(7)
         IF (increment(7)<0) THEN
-          WRITE(7,*) "increment of eqpStrain is invalid"
+          WRITE(7,*) "increment of eqpStrain is invalid",increment(7)
           WRITE(7,*) "dLambda",dLambda
           WRITE(7,*) "left",MATMUL(A,vec2)
           WRITE(7,*) "right",MATMUL(A,vec3)
