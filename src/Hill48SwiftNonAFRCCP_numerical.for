@@ -179,10 +179,10 @@
      & A(7,7),B(6,6),invB(6,6),invDDSDDE(6,6),h0,subVec(7),vec1(7),
      & vec2(7),H,C(7,7),subDDSDDE(6,6)
       subDDSDDE(:,:) = DDSDDE(:,:)
-      eqGStress = calc_eqGStress(hillParams,STRESS)
+      eqGStress = calc_eqGStress(hillGParams,STRESS)
       CALL calc_dfdS(hillFParams,STRESS,dfdS)
       CALL calc_dGdS(hillGParams,STRESS,dGdS)
-      CALL calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
+      CALL calc_ddGddS(hillGParams,STRESS,dGdS,ddGddS)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
       invB(:,:) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
       CALL calc_Inverse(6,invB,B)
@@ -272,8 +272,8 @@
       SUBROUTINE calc_dfdS(hillParams,STRESS,dGdS)
       IMPLICIT NONE
       DOUBLE PRECISION hillParams(4),STRESS(6),dGdS(6),eqGStress,
-     & calc_eqGStress,multiplier
-      eqGStress = calc_eqGStress(hillParams,STRESS)
+     & calc_eqStress,multiplier
+      eqGStress = calc_eqStress(hillParams,STRESS)
       multiplier = 0.75/(SUM(hillParams(1:3))*eqGStress)
       dGdS(1) = -1.0D0*2*hillParams(2)*(STRESS(3)-STRESS(1))+
      & 2*hillParams(3)*(STRESS(1)-STRESS(2))
