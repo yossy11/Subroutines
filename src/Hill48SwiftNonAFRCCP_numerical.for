@@ -23,7 +23,7 @@
       INTEGER i,iterationNum,YLDM
       DOUBLE PRECISION TOLER,YOUNG,POISSON,HARDK,HARDN,HARDSTRAIN0,lame,
      & shearMod,eStrain(6),pStrain(6),eqpStrain,totalStrain(6),
-     & hillFParams(4),hillFParams(4),eqStress,
+     & hillFParams(4),hillGParams(4),eqStress,
      & flowStress,calc_eqStress,calc_FlowStress,dfdS(6),dGdS(6),
      & eqGStress,calc_eqGStress,dLambda,F,H,lambda
 
