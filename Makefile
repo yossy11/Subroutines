@@ -14,7 +14,7 @@ debug:Debug $(DEBUG_TARGETS)
 Debug:
 	mkdir Debug
 
-Debug/%.o : src/%.for
+Debug/%.o : src_fortran/%.for
 	$(CXX) -c $< -o $@
 
 OBJS1=IdentifyParams.o
