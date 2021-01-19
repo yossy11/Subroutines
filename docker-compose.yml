@@ -2,8 +2,8 @@ version: "3.7"
 services:
   app:
     build: ./
+    environment:
+      - PYTHONPATH=./
     stdin_open: true
-    ports:
-      - "8888:8888"
     volumes:
       - .:/app

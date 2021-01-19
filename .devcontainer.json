@@ -1,0 +1,19 @@
+{
+  "name": "DevContainer",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "app",
+  "workspaceFolder": "/app",
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash",
+    "python.pythonPath": "/usr/local/bin/python",
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.formatting.provider": "autopep8",
+    "files.trimFinalNewlines": true,
+    "[python]": {
+      "editor.formatOnPaste": false,
+      "editor.formatOnSave": true
+    }
+  },
+  "extensions": ["ms-python.python"]
+}
