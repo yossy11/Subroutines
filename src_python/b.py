@@ -1,4 +1,5 @@
 import math
+import csv
 import numpy as np
 import numpy.linalg as LA
 
@@ -10,13 +11,8 @@ yld_T = np.array([[2, -1, -1, 0, 0, 0],
                   [0, 0, 0, 0, 3, 0],
                   [0, 0, 0, 0, 0, 3]])
 yld_T = yld_T/3.0
-
-
 c_prime = np.array([-0.0698, 0.9364, 0.0791, 1.0030, 0.5247, 1.3631, 0.9543, 1.0690, 1.0237])
 c_Db_prime = np.array([0.9811, 0.4767, 0.5753, 0.8668, 1.1450, -0.0792, 1.4046, 1.1471, 1.0516])
-
-yld_stress = 646*(0.025**0.227)
-
 YLDM = 8
 
 
@@ -51,37 +47,32 @@ def calc_phi(stress, c_prime, c_Db_prime, YLDM):
     return phi
 
 
-def calc_eqStress(stress, c_prime, c_Db_prime, YLDM):
-    phi = calc_phi(stress, c_prime, c_Db_prime, YLDM)
-    eqStress = (phi/4)**(1/YLDM)
-    return eqStress
-
-
-def calc_normalized_angled_eqStress(angle, c_prime, c_Db_prime, YLDM):
+def calc_angled_eqStress(angle, c_prime, c_Db_prime, YLDM):
     angled_stress = np.array([math.cos(angle)**2, math.sin(angle)**2,
                               0, math.sin(angle)*math.cos(angle), 0, 0])
     phi = calc_phi(angled_stress, c_prime, c_Db_prime, YLDM)
-    normalized_angled_eqStress = (4/phi)**(1/YLDM)
-    return normalized_angled_eqStress
+    angled_eqStress = (4/phi)**(1/YLDM)
+    return angled_eqStress
 
 
-stress = np.array([0, 0, 1, 0, 0, 0])
-phi = calc_phi(stress, c_prime, c_Db_prime, YLDM)
-noramalized_stress = (4/phi)**(1/YLDM)
-print(noramalized_stress)
+def error_func(exp_data, c_prime, c_Db_prime, YLDM, wp, wb):
+    error = 0
+    for data in exp_data:
+        if not data["orientation"].isdecimal():
+            stress = np.array([0, 0, 1, 0, 0, 0])
+            phi = calc_phi(stress, c_prime, c_Db_prime, YLDM)
+            predicted_stress = (4/phi)**(1/YLDM)
+            error += wb*(predicted_stress/float(data["normalized_yield_stress"]) - 1.0)**2
+            continue
+        predicted_stress = calc_angled_eqStress(
+            math.pi*float(data["orientation"])/180.0, c_prime, c_Db_prime, YLDM)
+        print(predicted_stress)
+        error += wp*(predicted_stress/float(data["normalized_yield_stress"])-1.0)**2
+    return error
 
 
-eqStress0 = calc_normalized_angled_eqStress(math.pi*0, c_prime, c_Db_prime, YLDM)
-eqStress15 = calc_normalized_angled_eqStress(math.pi/12, c_prime, c_Db_prime, YLDM)
-eqStress30 = calc_normalized_angled_eqStress(math.pi/6, c_prime, c_Db_prime, YLDM)
-eqStress45 = calc_normalized_angled_eqStress(math.pi/4, c_prime, c_Db_prime, YLDM)
-eqStress60 = calc_normalized_angled_eqStress(math.pi/3, c_prime, c_Db_prime, YLDM)
-eqStress75 = calc_normalized_angled_eqStress(math.pi*5/12, c_prime, c_Db_prime, YLDM)
-eqStress90 = calc_normalized_angled_eqStress(math.pi/2, c_prime, c_Db_prime, YLDM)
-print(eqStress0)
-print(eqStress15)
-print(eqStress30)
-print(eqStress45)
-print(eqStress60)
-print(eqStress75)
-print(eqStress90)
+if __name__ == "__main__":
+    with open("Datas/AA2090-T3.csv") as f:
+        reader = csv.DictReader(f)
+        exp_data = [row for row in reader]
+    print(error_func(exp_data, c_prime, c_Db_prime, YLDM, 1.0, 0.01))

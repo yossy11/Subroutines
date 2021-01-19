@@ -12,6 +12,9 @@
     "python.linting.flake8Enabled": true,
     "python.formatting.provider": "autopep8",
     "files.trimFinalNewlines": true,
+    "editor.rulers": [
+      99
+    ],
     "[python]": {
       "editor.formatOnPaste": false,
       "editor.formatOnSave": true
