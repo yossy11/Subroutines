@@ -1,6 +1,8 @@
 {
   "name": "DevContainer",
-  "dockerComposeFile": ["docker-compose.yml"],
+  "dockerComposeFile": [
+    "docker-compose.yml"
+  ],
   "service": "app",
   "workspaceFolder": "/app",
   "settings": {
@@ -15,5 +17,8 @@
       "editor.formatOnSave": true
     }
   },
-  "extensions": ["ms-python.python"]
+  "extensions": [
+    "ms-python.python",
+    "ms-toolsai.jupyter"
+  ]
 }
