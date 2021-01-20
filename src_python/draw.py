@@ -26,8 +26,8 @@ yld_T = np.array([[2, -1, -1, 0, 0, 0],
                   [0, 0, 0, 3, 0, 0],
                   [0, 0, 0, 0, 3, 0],
                   [0, 0, 0, 0, 0, 3]])
-
 yld_T = yld_T/3.0
+YLDM = 2
 c_params = np.array([])
 
 c_params = np.array([-0.0698, 0.9364, 0.0791, 1.0030, 0.5247, 1.3631, 0.9543, 1.0690, 1.0237,
@@ -66,7 +66,7 @@ def make_C_matrix(c_params):
     return yld_C_prime, yld_C_Db_prime
 
 
-def calc_eqStress(x, y, shear):
+def calc_eqStress(x, y, shear, YLDM):
     yld_C_prime, yld_C_Db_prime = make_C_matrix(c_params)
     stress = np.array([x, y, 0, shear, 0, 0])
     s_prime = yld_C_prime@yld_T@stress
@@ -82,9 +82,9 @@ def calc_eqStress(x, y, shear):
     phi = 0.0
     for i in range(3):
         for j in range(3):
-            phi += abs(pri_stress[i] - pri_Db_stress[j])**8
+            phi += abs(pri_stress[i] - pri_Db_stress[j])**YLDM
 
-    eq_stress = (phi/4.0)**(1/8.0)
+    eq_stress = (phi/4.0)**(1/YLDM)
     return eq_stress
 
 
@@ -106,7 +106,7 @@ Z = np.empty_like(X)
 Zs = np.array([Z]*10)
 for i in range(len(X)):
     for j in range(len(X)):
-        Z[i][j] = calc_eqStress(X[i][j], Y[i][j], 0)
+        Z[i][j] = calc_eqStress(X[i][j], Y[i][j], 0, YLDM)
         # for k in range(10):
         #     Zs[k][i][j] = calc_eqStress(X[i][j], Y[i][j], k*0.05)
 
@@ -136,4 +136,4 @@ plt.grid(color='black', linestyle='dotted', linewidth=1)
 # ax.clabel(contours, ["Yld2004-18P"], inline=True, fontsize=10)
 # plt.legend(bbox_to_anchor=(1, 1), loc='upper right', borderaxespad=0, fontsize=18)
 plt.show()
-plt.savefig("figure9.png")  # -----(2)
+plt.savefig("figure11.png")  # -----(2)
