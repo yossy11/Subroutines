@@ -1,6 +1,6 @@
       ! This is UMAT subroutine made by yossy11
       ! yield function : YLD2004-18p
-      ! plastic potential : Hill48
+      ! plastic potential : YLD2004-18p
       ! hardening rule : Swift
       ! flow rule : non-AFR
       ! integration algorithm : CCP(convex cutting plane)
@@ -23,42 +23,60 @@
       INTEGER i,iterationNum,YLDM
       DOUBLE PRECISION TOLER,YOUNG,POISSON,HARDK,HARDN,HARDSTRAIN0,lame,
      & shearMod,eStrain(6),pStrain(6),eqpStrain,totalStrain(6),
-     & yldCPrime(6,6),yldCDbPrime(6,6),hillParams(4),eqStress,
-     & flowStress,calc_eqStress,calc_FlowStress,dfdS(6),dGdS(6),
-     & eqGStress,calc_eqGStress,dLambda,F,H,lambda
+     & f_yldCPrime(6,6),f_yldCDbPrime(6,6),g_yldCPrime(6,6),
+     & g_yldCDbPrime(6,6),eqStress,flowStress,calc_eqStress,
+     & calc_FlowStress,dfdS(6),dGdS(6),eqGStress,dLambda,F,H,lambda
 
       ! define constants
       PARAMETER(TOLER=1.0D-5,YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,
      & HARDN=0.227D0,HARDSTRAIN0=2.5D-2,YLDM=8)
 
       ! anisotropic params
-      yldCPrime(:,:) = 0.0D0
-      yldCDbPrime(:,:) = 0.0D0
+      f_yldCPrime(:,:) = 0.0D0
+      f_yldCDbPrime(:,:) = 0.0D0
 
-      yldCPrime(1,2) = -0.056940277665336686D0
-      yldCPrime(1,3) = -0.9859971641591349D0
-      yldCPrime(2,1) = -0.1986277232332533D0
-      yldCPrime(2,3) = -0.9313609018430112D0
-      yldCPrime(3,1) = -0.5871124291038275D0
-      yldCPrime(3,2) = -1.330942716974344D0
-      yldCPrime(4,4) = 0.944649833438939D0
-      yldCPrime(5,5) = 1.090740680806561D0
-      yldCPrime(6,6) = 1.0925155792832137D0
+      f_yldCPrime(1,2) = -0.056940277665336686D0
+      f_yldCPrime(1,3) = -0.9859971641591349D0
+      f_yldCPrime(2,1) = -0.1986277232332533D0
+      f_yldCPrime(2,3) = -0.9313609018430112D0
+      f_yldCPrime(3,1) = -0.5871124291038275D0
+      f_yldCPrime(3,2) = -1.330942716974344D0
+      f_yldCPrime(4,4) = 0.944649833438939D0
+      f_yldCPrime(5,5) = 1.090740680806561D0
+      f_yldCPrime(6,6) = 1.0925155792832137D0
 
-      yldCDbPrime(1,2) = -1.0763323731674885D0
-      yldCDbPrime(1,3) = -0.4323653254398786D0
-      yldCDbPrime(2,1) = -0.613688607514406D0
-      yldCDbPrime(2,3) = -0.9659074930180515D0
-      yldCDbPrime(3,1) = -1.1519059774170437D0
-      yldCDbPrime(3,2) = 0.08362991282554624D0
-      yldCDbPrime(4,4) = 1.4567012369610057D0
-      yldCDbPrime(5,5) = 1.1752482654026506D0
-      yldCDbPrime(6,6) = 1.116415832572442D0
+      f_yldCDbPrime(1,2) = -1.0763323731674885D0
+      f_yldCDbPrime(1,3) = -0.4323653254398786D0
+      f_yldCDbPrime(2,1) = -0.613688607514406D0
+      f_yldCDbPrime(2,3) = -0.9659074930180515D0
+      f_yldCDbPrime(3,1) = -1.1519059774170437D0
+      f_yldCDbPrime(3,2) = 0.08362991282554624D0
+      f_yldCDbPrime(4,4) = 1.4567012369610057D0
+      f_yldCDbPrime(5,5) = 1.1752482654026506D0
+      f_yldCDbPrime(6,6) = 1.116415832572442D0
 
-      hillParams(1) = 0.25216953733566727
-      hillParams(2) = 0.8254230293025175
-      hillParams(3) = 0.17457697069748246
-      hillParams(4) = 2.2380520016508463
+      g_yldCPrime(:,:) = 0.0D0
+      g_yldCDbPrime(:,:) = 0.0D0
+
+      g_yldCPrime(1,2) = 0.0681890550605269D0
+      g_yldCPrime(1,3) = -0.8728581783781829D0
+      g_yldCPrime(2,1) = -0.07883817293470376D0
+      g_yldCPrime(2,3) = -0.9800868482532625D0
+      g_yldCPrime(3,1) = -0.6396161030250869D0
+      g_yldCPrime(3,2) = -1.416739220885185D0
+      g_yldCPrime(4,4) = 1.0767566538602826D0
+      g_yldCPrime(5,5) = 1.069D0
+      g_yldCPrime(6,6) = 1.0237D0
+
+      g_yldCDbPrime(1,2) = -0.936165230037105D0
+      g_yldCDbPrime(1,3) = -0.7827698684119997D0
+      g_yldCDbPrime(2,1) = -0.6837450696952991D0
+      g_yldCDbPrime(2,3) = -0.7782197960468684D0
+      g_yldCDbPrime(3,1) = -1.1210834461178005D0
+      g_yldCDbPrime(3,2) = 0.0930311520854942D0
+      g_yldCDbPrime(4,4) = 1.1682692085440296D0
+      g_yldCDbPrime(5,5) = 1.1471D0
+      g_yldCDbPrime(6,6) = 1.0516D0
 
       ! this subroutine can be used only on the condition of NDI=NSHR=3
       IF (NDI/=3 .or. NSHR/=3) THEN
@@ -90,7 +108,7 @@
 
       DO WHILE (iterationNum < 1000000)
         ! calculate eqStress and flowStress
-        eqStress = calc_eqStress(YLDM,yldCPrime,yldCDbPrime,STRESS)
+        eqStress = calc_eqStress(YLDM,f_yldCPrime,f_yldCDbPrime,STRESS)
         flowStress = calc_FlowStress(HARDK,HARDSTRAIN0,HARDN,eqpStrain)
         F = eqStress - flowStress
         IF (ISNAN(F)) THEN
@@ -102,18 +120,18 @@
         IF (F < flowStress*TOLER) THEN
           CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
           IF (iterationNum /= 0) THEN
-            CALL updateDDSDDE(hillParams,YLDM,yldCPrime,yldCDbPrime,
-     &       STRESS,DDSDDE,lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,
-     &       eqpStrain)
+            CALL updateDDSDDE(YLDM,f_yldCPrime,f_yldCDbPrime,
+     &       g_yldCPrime,g_yldCDbPrime,STRESS,DDSDDE,lambda,eqStress,
+     &       HARDK,HARDN,HARDSTRAIN0,eqpStrain)
           END IF
           RETURN
         END IF
 
         ! if yield
-        eqGStress = calc_eqGStress(hillParams,STRESS)
+        eqGStress = calc_eqStress(YLDM,g_yldCPrime,g_yldCDbPrime,STRESS)
         H = HARDK*HARDN*((HARDSTRAIN0 + eqpStrain)**(HARDN-1.0D0))
-        CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
-        CALL calc_dGdS(hillParams,STRESS,dGdS)
+        CALL calc_dfdS(YLDM,f_yldCPrime,f_yldCDbPrime,STRESS,dfdS)
+        CALL calc_dfdS(YLDM,g_yldCPrime,g_yldCDbPrime,STRESS,dGdS)
 
         dLambda = F/(DOT_PRODUCT(dfdS,MATMUL(DDSDDE,dGdS)) + 
      &   H*eqGStress/eqStress)
@@ -160,19 +178,6 @@
       END FUNCTION calc_eqStress
 
 
-      ! calculate equivalent stress with plastic potential G
-      DOUBLE PRECISION FUNCTION calc_eqGStress(hillParams,STRESS)
-      IMPLICIT NONE
-      DOUBLE PRECISION hillParams(4),STRESS(6),numerator
-      numerator = hillParams(1)*(STRESS(2) - STRESS(3))**2 + 
-     & hillParams(2)*(STRESS(3)-STRESS(1))**2 + 
-     & hillParams(3)*(STRESS(1)-STRESS(2))**2 + 
-     & 2.0D0*hillParams(4)*SUM(STRESS(4:6)**2)
-      calc_eqGStress = SQRT(1.5D0*numerator/SUM(hillParams(1:3)))
-      RETURN
-      END FUNCTION calc_eqGStress
-
-
       ! calculate flow stress
       DOUBLE PRECISION FUNCTION calc_FlowStress(HARDK,HARDSTRAIN0,
      & HARDN,eqpStrain)
@@ -196,20 +201,22 @@
 
 
       ! update tangent modulus
-      SUBROUTINE updateDDSDDE(hillParams,YLDM,yldCPrime,yldCDbPrime,
-     & STRESS,DDSDDE,lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
+      SUBROUTINE updateDDSDDE(YLDM,f_yldCPrime,f_yldCDbPrime,
+     & g_yldCPrime,g_yldCDbPrime,STRESS,DDSDDE,lambda,eqStress,
+     & HARDK,HARDN,HARDSTRAIN0,eqpStrain)
       IMPLICIT NONE
       INTEGER YLDM,i,j
-      DOUBLE PRECISION hillParams(4),yldCPrime(6,6),yldCDbPrime(6,6),
-     & STRESS(6),DDSDDE(6,6),lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,
-     & eqpStrain,eqGStress,calc_eqGStress,dfdS(6),dGdS(6),ddGddS(6,6),
+      DOUBLE PRECISION f_yldCPrime(6,6),f_yldCDbPrime(6,6),
+     & g_yldCPrime(6,6),g_yldCDbPrime(6,6),STRESS(6),DDSDDE(6,6),
+     & lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,
+     & eqpStrain,eqGStress,calc_eqStress,dfdS(6),dGdS(6),ddGddS(6,6),
      & A(7,7),B(6,6),invB(6,6),invDDSDDE(6,6),h0,subVec(7),vec1(7),
      & vec2(7),H,C(7,7),subDDSDDE(6,6)
       subDDSDDE(:,:) = DDSDDE(:,:)
-      eqGStress = calc_eqGStress(hillParams,STRESS)
-      CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,dfdS)
-      CALL calc_dGdS(hillParams,STRESS,dGdS)
-      CALL calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
+      eqGStress = calc_eqStress(YLDM,g_yldCPrime,g_yldCDbPrime,STRESS)
+      CALL calc_dfdS(YLDM,f_yldCPrime,f_yldCDbPrime,STRESS,dfdS)
+      CALL calc_dfdS(YLDM,g_yldCPrime,g_yldCDbPrime,STRESS,dGdS)
+      CALL calc_ddGddS(YLDM,yldCPrime,yldCDbPrime,STRESS,dGdS,ddGddS)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
       invB(:,:) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
       CALL calc_Inverse(6,invB,B)
@@ -242,55 +249,20 @@
       END SUBROUTINE updateDDSDDE
 
 
-      ! calculate differential of plastic potential
-      SUBROUTINE calc_dGdS(hillParams,STRESS,dGdS)
+      ! calculate second derivatives of plastic potential
+      SUBROUTINE calc_ddGddS(YLDM,yldCPrime,yldCDbPrime,STRESS,dGdS,
+     & ddGddS)
       IMPLICIT NONE
-      DOUBLE PRECISION hillParams(4),STRESS(6),dGdS(6),eqGStress,
-     & calc_eqGStress,multiplier
-      eqGStress = calc_eqGStress(hillParams,STRESS)
-      multiplier = 0.75/(SUM(hillParams(1:3))*eqGStress)
-      dGdS(1) = -1.0D0*2*hillParams(2)*(STRESS(3)-STRESS(1))+
-     & 2*hillParams(3)*(STRESS(1)-STRESS(2))
-      dGdS(2) = 2*hillParams(1)*(STRESS(2)-STRESS(3))-
-     & 2*hillParams(3)*(STRESS(1)-STRESS(2))
-      dGdS(3) = -1.0D0*2*hillParams(1)*(STRESS(2)-STRESS(3))+
-     & 2*hillParams(2)*(STRESS(3)-STRESS(1))
-      dGdS(4) = 4*hillParams(4)*STRESS(4)
-      dGdS(5) = 4*hillParams(4)*STRESS(5)
-      dGdS(6) = 4*hillParams(4)*STRESS(6)
-      dGdS(:) = dGdS(:) * multiplier
-      RETURN
-      END SUBROUTINE calc_dGdS
-
-
-      ! calculate differential of plastic potential
-      SUBROUTINE calc_ddGddS(hillParams,STRESS,dGdS,ddGddS)
-      IMPLICIT NONE
-      INTEGER i,j
-      DOUBLE PRECISION hillParams(4),STRESS(6),dGdS(6),ddGddS(6,6),
-     & eqGStress,calc_eqGStress,multiplier
-      eqGStress = calc_eqGStress(hillParams,STRESS)
-      multiplier = 0.75/(SUM(hillParams(1:3))*eqGStress)
-
-      ddGddS(:,:) = 0.0D0
-      ddGddS(1,1) = 2*hillParams(2) + 2*hillParams(3)
-      ddGddS(2,2) = 2*hillParams(1) + 2*hillParams(3)
-      ddGddS(3,3) = 2*hillParams(1) + 2*hillParams(2)
-      ddGddS(4,4) = 4*hillParams(4)
-      ddGddS(5,5) = 4*hillParams(4)
-      ddGddS(6,6) = 4*hillParams(4)
-      ddGddS(1,2) = -1.0D0*2*hillParams(3)
-      ddGddS(1,3) = -1.0D0*2*hillParams(2)
-      ddGddS(2,1) = -1.0D0*2*hillParams(3)
-      ddGddS(2,3) = -1.0D0*2*hillParams(1)
-      ddGddS(3,1) = -1.0D0*2*hillParams(2)
-      ddGddS(3,2) = -1.0D0*2*hillParams(1)
+      INTEGER YLDM,i
+      DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),STRESS(6),
+     & dGdS(6),ddGddS(6,6),DELTAX,subStress(6),subdGdS(6)
+      PARAMETER(DELTAX=1.0D-1)
       DO i=1,6
-        DO j=1,6
-          ddGddS(i,j) = multiplier*ddGddS(i,j) - 
-     &     dGdS(i)*dGdS(j)/eqGStress
-        END DO
-      END DO
+        subStress(:) = STRESS(:)
+        subStress(i) = subStress(i) + DELTAX
+        CALL calc_dGdS(YLDM,yldCPrime,yldCDbPrime,STRESS,subdGdS)
+        ddGddS(:,i) = (subdGdS(:) - dGdS(:))/DELTAX
+      END DO  
       RETURN
       END SUBROUTINE calc_ddGddS
 
