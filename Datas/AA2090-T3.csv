@@ -7,3 +7,7 @@ orientation,normalized_yield_stress,r_value
 75,0.8815,0.5384
 90,0.9102,0.6923
 EB,1.0350,0.67
+TDND,0.47,0
+NDRD,0.47,0
+TDND45,0.90,0
+NDRD45,0.89,0

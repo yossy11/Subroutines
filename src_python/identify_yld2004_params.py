@@ -54,6 +54,14 @@ def calc_phi(stress, c_params, YLDM):
 def calc_angled_eqStress(angle, c_params, YLDM):
     if angle == "EB":
         angled_stress = np.array([0, 0, 1, 0, 0, 0])
+    elif angle == "TDND":
+        angled_stress = np.array([0, 0, 0, 0, 0, 1.0])
+    elif angle == "NDRD":
+        angled_stress = np.array([0, 0, 0, 0, 1.0, 0])
+    elif angle == "TDND45":
+        angled_stress = np.array([0, 0.5, 0.5, 0, 0, 0.5])
+    elif angle == "NDRD45":
+        angled_stress = np.array([0.5, 0, 0.5, 0, 0.5, 0])
     else:
         angle = math.pi*float(angle)/180.0
         angled_stress = np.array([math.cos(angle)**2, math.sin(angle)**2,
@@ -67,14 +75,26 @@ def error_func(exp_data, c_params, YLDM, wp, wq, wb):
     error = 0
     for data in exp_data:
         angle = data["orientation"]
-        predicted_stress = calc_angled_eqStress(angle, c_params, YLDM)
-        predicted_r = calc_angled_r(angle, c_params, YLDM)
-        if angle == "EB":
-            error += wb*(predicted_stress/float(data["normalized_yield_stress"])-1.0)**2
-            error += wb*(predicted_r/float(data["r_value"])-1.0)**2
-        else:
-            error += wp*(predicted_stress/float(data["normalized_yield_stress"])-1.0)**2
-            error += wq*(predicted_r/float(data["r_value"])-1.0)**2
+        if wp != 0:
+            exp_eqStress = float(data["normalized_yield_stress"])
+            if exp_eqStress == 0:
+                continue
+            predicted_stress = calc_angled_eqStress(angle, c_params, YLDM)
+            if not angle.isdecimal():
+                error += wb*(predicted_stress/exp_eqStress - 1.0)**2
+            else:
+                error += wp*(predicted_stress/exp_eqStress - 1.0)**2
+
+        if wq != 0:
+            exp_r = float(data["r_value"])
+            if exp_r == 0:
+                continue
+            predicted_r = calc_angled_r(angle, c_params, YLDM)
+            if not angle.isdecimal():
+                error += wb*(predicted_r/exp_r - 1.0)**2
+            else:
+                error += wq*(predicted_r/exp_r - 1.0)**2
+
     return error
 
 
@@ -107,6 +127,14 @@ def calc_dphids(angle, c_params, YLDM):
     dphids = np.zeros(6)
     if angle == "EB":
         angled_stress = np.array([-1/3.0, -1/3.0, 2/3.0, 0, 0, 0])
+    elif angle == "TDND":
+        angled_stress = np.array([0, 0, 0, 0, 0, 1.0])
+    elif angle == "NDRD":
+        angled_stress = np.array([0, 0, 0, 0, 1.0, 0])
+    elif angle == "TDND45":
+        angled_stress = np.array([0, 0.5, 0.5, 0, 0, 0.5])
+    elif angle == "NDRD45":
+        angled_stress = np.array([0.5, 0, 0.5, 0, 0.5, 0])
     else:
         angle = math.pi*float(angle)/180.0
         angled_stress = np.array([math.cos(angle)**2, math.sin(angle)**2,
@@ -149,17 +177,19 @@ def calc_error_gradient(exp_data, c_params, YLDM, wp, wq, wb):
             predicted_stress = calc_angled_eqStress(angle, c_params, YLDM)
             exp_stress = float(data["normalized_yield_stress"])
             dsdc = calc_dsdc(angle, c_params, YLDM)
-            if angle == "EB":
+            if not angle.isdecimal():
                 gradient += (wb*2.0*(predicted_stress/exp_stress - 1.0)/exp_stress)*dsdc
             else:
                 gradient += (wp*2.0*(predicted_stress/exp_stress - 1.0)/exp_stress)*dsdc
 
         # calculate gradient from Lankford value
         if wq != 0:
+            if not (angle.isdecimal() or angle == "EB"):
+                continue
             predicted_r = calc_angled_r(angle, c_params, YLDM)
             exp_r = float(data["r_value"])
             drdc = calc_drdc(angle, c_params, YLDM)
-            if angle == "EB":
+            if not angle.isdecimal():
                 gradient += (wb*2.0*(predicted_r/exp_r - 1.0)/exp_r)*drdc
             else:
                 gradient += (wq*2.0*(predicted_r/exp_r - 1.0)/exp_r)*drdc
