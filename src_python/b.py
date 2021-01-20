@@ -3,7 +3,6 @@ import csv
 import numpy as np
 import numpy.linalg as LA
 
-
 yld_T = np.array([[2, -1, -1, 0, 0, 0],
                   [-1, 2, -1, 0, 0, 0],
                   [-1, -1, 2, 0, 0, 0],
@@ -52,6 +51,26 @@ def calc_phi(stress, c_params, YLDM):
     return phi
 
 
+def calc_phi2(stress, c_params, YLDM):
+    yld_C_prime, yld_C_Db_prime = make_C_matrix(c_params)
+    s_prime = yld_C_prime@stress
+    s_Db_prime = yld_C_Db_prime@stress
+    s_prime_mat = np.array([[s_prime[0], s_prime[3], s_prime[4]],
+                            [s_prime[3], s_prime[1], s_prime[5]],
+                            [s_prime[4], s_prime[5], s_prime[2]]])
+    s_Db_prime_mat = np.array([[s_Db_prime[0], s_Db_prime[3], s_Db_prime[4]],
+                               [s_Db_prime[3], s_Db_prime[1], s_Db_prime[5]],
+                               [s_Db_prime[4], s_Db_prime[5], s_Db_prime[2]]])
+    pri_stress, _v = LA.eig(s_prime_mat)
+    pri_Db_stress, _v = LA.eig(s_Db_prime_mat)
+    phi = 0.0
+    for i in range(3):
+        for j in range(3):
+            phi += abs(pri_stress[i] - pri_Db_stress[j])**YLDM
+
+    return phi
+
+
 def calc_angled_eqStress(angle, c_params, YLDM):
     if angle == "EB":
         angled_stress = np.array([0, 0, 1, 0, 0, 0])
@@ -68,7 +87,6 @@ def error_func(exp_data, c_params, YLDM, wp, wb):
     error = 0
     for data in exp_data:
         predicted_stress = calc_angled_eqStress(data["orientation"], c_params, YLDM)
-        print(predicted_stress)
         if data["orientation"] == "EB":
             error += wb*(predicted_stress/float(data["normalized_yield_stress"])-1.0)**2
         else:
@@ -88,23 +106,77 @@ def calc_dsdc(angle, c_params, YLDM):
     return dsdc
 
 
+def calc_dphids(angle, c_params, YLDM):
+    DELTAX = 1.0e-6
+    dphids = np.zeros(6)
+    if angle == "EB":
+        angled_stress = np.array([-1/3.0, -1/3.0, 2/3.0, 0, 0, 0])
+    else:
+        angle = math.pi*float(angle)/180.0
+        angled_stress = np.array([math.cos(angle)**2 - 1/3.0, math.sin(angle)**2 - 1/3.0, -1/3.0,
+                                  math.sin(angle)*math.cos(angle), 0, 0])
+    phi = calc_phi2(angled_stress, c_params, YLDM)
+    for i in range(6):
+        sub_angled_stress = angled_stress.copy()
+        sub_angled_stress[i] += DELTAX
+        sub_phi = calc_phi2(sub_angled_stress, c_params, YLDM)
+        dphids[i] = (sub_phi - phi)/DELTAX
+    return dphids
+
+
+def calc_dfds(angle, c_params, YLDM):
+    dphids = calc_dphids(angle, c_params, YLDM)
+    angled_eqStress = calc_angled_eqStress(angle, c_params, YLDM)
+    dfds = (dphids*angled_eqStress**(1-YLDM))/(4*YLDM)
+    return dfds
+
+
+def calc_angled_r(angle, c_params, YLDM):
+    dphids = calc_dphids(angle, c_params, YLDM)
+    dfds = calc_dfds(angle, c_params, YLDM)
+    if angle == "EB":
+        r = dphids[1]/dphids[0]
+    else:
+        # r = -1.0 - (4*YLDM)/(predicted_stress*dphids[2])
+        angle = math.pi*float(angle)/180.0
+        r = (2.0*dfds[3]*math.cos(angle)*math.sin(angle)-dfds[0]*math.sin(angle)**2 -
+             dfds[1]*math.cos(angle)**2)/(dfds[0]+dfds[1])
+    return r
+
+
 def calc_error_gradient(exp_data, c_params, YLDM, wp, wb):
     gradient = np.zeros(18)
     for data in exp_data:
         predicted_stress = calc_angled_eqStress(data["orientation"], c_params, YLDM)
+        exp_stress = float(data["normalized_yield_stress"])
         dsdc = calc_dsdc(data["orientation"], c_params, YLDM)
         if data["orientation"] == "EB":
-            gradient += (wb*2.0*(predicted_stress/data["normalized_yield_stress"]-1.0) /
-                         data["normalized_yield_stress"])*dsdc
+            weight = wb
         else:
-            gradient += (wp*2.0*(predicted_stress / data["normalized_yield_stress"]-1.0) /
-                         data["normalized_yield_stress"])*dsdc
+            weight = wp
+        gradient += (weight*2.0*(predicted_stress/exp_stress - 1.0)/exp_stress)*dsdc
     return gradient
+
+
+def gradient_descent(exp_data, YLDM, wp, wb):
+    learning_rate = 1.0e-1
+    c_params = np.ones(18)
+    for i in range(10000):
+        error = error_func(exp_data, c_params, YLDM, wp, wb)
+        print(i, error)
+        gradient = calc_error_gradient(exp_data, c_params, YLDM, wp, wb)
+        c_params -= learning_rate*gradient
+    return c_params
 
 
 if __name__ == "__main__":
     with open("Datas/AA2090-T3.csv") as f:
         reader = csv.DictReader(f)
         exp_data = [row for row in reader]
-    print(error_func(exp_data, c_params, YLDM, 1.0, 0.01))
-    print(calc_dsdc(math.pi/3, c_params, YLDM))
+    wp = 1.0
+    wb = 0.01
+    # error = error_func(exp_data, c_params, YLDM, wp, wb)
+    # print(error)
+    # print(calc_angled_r("45", c_params, YLDM))
+    c_params = gradient_descent(exp_data, YLDM, wp, wb)
+    print(c_params)
