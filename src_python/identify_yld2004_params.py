@@ -143,18 +143,26 @@ def calc_error_gradient(exp_data, c_params, YLDM, wp, wq, wb):
     gradient = np.zeros(18)
     for data in exp_data:
         angle = data["orientation"]
-        predicted_stress = calc_angled_eqStress(angle, c_params, YLDM)
-        predicted_r = calc_angled_r(angle, c_params, YLDM)
-        exp_stress = float(data["normalized_yield_stress"])
-        exp_r = float(data["r_value"])
-        dsdc = calc_dsdc(angle, c_params, YLDM)
-        drdc = calc_drdc(angle, c_params, YLDM)
-        if angle == "EB":
-            gradient += (wb*2.0*(predicted_stress/exp_stress - 1.0)/exp_stress)*dsdc
-            gradient += (wb*2.0*(predicted_r/exp_r - 1.0)/exp_r)*drdc
-        else:
-            gradient += (wp*2.0*(predicted_stress/exp_stress - 1.0)/exp_stress)*dsdc
-            gradient += (wq*2.0*(predicted_r/exp_r - 1.0)/exp_r)*drdc
+
+        # calculate gradient from stress
+        if wp != 0:
+            predicted_stress = calc_angled_eqStress(angle, c_params, YLDM)
+            exp_stress = float(data["normalized_yield_stress"])
+            dsdc = calc_dsdc(angle, c_params, YLDM)
+            if angle == "EB":
+                gradient += (wb*2.0*(predicted_stress/exp_stress - 1.0)/exp_stress)*dsdc
+            else:
+                gradient += (wp*2.0*(predicted_stress/exp_stress - 1.0)/exp_stress)*dsdc
+
+        # calculate gradient from Lankford value
+        if wq != 0:
+            predicted_r = calc_angled_r(angle, c_params, YLDM)
+            exp_r = float(data["r_value"])
+            drdc = calc_drdc(angle, c_params, YLDM)
+            if angle == "EB":
+                gradient += (wb*2.0*(predicted_r/exp_r - 1.0)/exp_r)*drdc
+            else:
+                gradient += (wq*2.0*(predicted_r/exp_r - 1.0)/exp_r)*drdc
     return gradient
 
 
@@ -181,7 +189,7 @@ if __name__ == "__main__":
         reader = csv.DictReader(f)
         exp_data = [row for row in reader]
     wp = 1.0
-    wq = 0
+    wq = 0.1
     wb = 0.01
-    # c_params = gradient_descent(exp_data, YLDM, wp, wq, wb)
-    # print(c_params)
+    c_params = gradient_descent(exp_data, YLDM, wp, wq, wb)
+    print(c_params)
