@@ -17,67 +17,19 @@ ddgdsxxdsxy = sympy.diff(dgdsxx, sxy)
 ddgdsxxdsxz = sympy.diff(dgdsxx, sxz)
 ddgdsxxdsyz = sympy.diff(dgdsxx, syz)
 
-ddgdsxxdsxx = ddgdsxxdsxx.subs([(F, 0.25216953733566727),
-                                (G, 0.8254230293025175),
-                                (H, 0.17457697069748246),
-                                (L, 2.2380520016508463),
-                                (M, 2.2380520016508463),
-                                (N, 2.2380520016508463),
-                                (sxx, 500), (syy, 700), (szz, 200),
-                                (sxy, 100), (sxz, 200), (syz, 300), ])
+hill_f = 0.25216953733566727
+hill_g = 0.8254230293025175
+hill_h = 0.17457697069748246
+hill_l = 2.2380520016508463
 
-ddgdsxxdsyy = ddgdsxxdsyy.subs([(F, 0.25216953733566727),
-                                (G, 0.8254230293025175),
-                                (H, 0.17457697069748246),
-                                (L, 2.2380520016508463),
-                                (M, 2.2380520016508463),
-                                (N, 2.2380520016508463),
-                                (sxx, 500), (syy, 700), (szz, 200),
-                                (sxy, 100), (sxz, 200), (syz, 300), ])
+params = [(F, hill_f), (G, hill_g), (H, hill_h), (L, hill_l), (M, hill_l), (N, hill_l),
+          (sxx, 500), (syy, 700), (szz, 200), (sxy, 100), (sxz, 200), (syz, 300), ]
 
-ddgdsxxdszz = ddgdsxxdszz.subs([(F, 0.25216953733566727),
-                                (G, 0.8254230293025175),
-                                (H, 0.17457697069748246),
-                                (L, 2.2380520016508463),
-                                (M, 2.2380520016508463),
-                                (N, 2.2380520016508463),
-                                (sxx, 500), (syy, 700), (szz, 200),
-                                (sxy, 100), (sxz, 200), (syz, 300), ])
-
-ddgdsxxdsxy = ddgdsxxdsxy.subs([(F, 0.25216953733566727),
-                                (G, 0.8254230293025175),
-                                (H, 0.17457697069748246),
-                                (L, 2.2380520016508463),
-                                (M, 2.2380520016508463),
-                                (N, 2.2380520016508463),
-                                (sxx, 500), (syy, 700), (szz, 200),
-                                (sxy, 100), (sxz, 200), (syz, 300), ])
-
-ddgdsxxdsxz = ddgdsxxdsxz.subs([(F, 0.25216953733566727),
-                                (G, 0.8254230293025175),
-                                (H, 0.17457697069748246),
-                                (L, 2.2380520016508463),
-                                (M, 2.2380520016508463),
-                                (N, 2.2380520016508463),
-                                (sxx, 500), (syy, 700), (szz, 200),
-                                (sxy, 100), (sxz, 200), (syz, 300), ])
-
-ddgdsxxdsyz = ddgdsxxdsyz.subs([(F, 0.25216953733566727),
-                                (G, 0.8254230293025175),
-                                (H, 0.17457697069748246),
-                                (L, 2.2380520016508463),
-                                (M, 2.2380520016508463),
-                                (N, 2.2380520016508463),
-                                (sxx, 500), (syy, 700), (szz, 200),
-                                (sxy, 100), (sxz, 200), (syz, 300), ])
+ddgdsxxdsxx = ddgdsxxdsxx.subs(params)
+ddgdsxxdsyy = ddgdsxxdsyy.subs(params)
+ddgdsxxdszz = ddgdsxxdszz.subs(params)
+ddgdsxxdsxy = ddgdsxxdsxy.subs(params)
+ddgdsxxdsxz = ddgdsxxdsxz.subs(params)
+ddgdsxxdsyz = ddgdsxxdsyz.subs(params)
 
 print(ddgdsxxdsxx, ddgdsxxdsyy, ddgdsxxdszz, ddgdsxxdsxy, ddgdsxxdsxz, ddgdsxxdsyz)
-
-# print(ddgdsxxdsxx.subs([(F, 0.25216953733566727),
-#                         (G, 0.8254230293025175),
-#                         (H, 0.17457697069748246),
-#                         (L, 2.2380520016508463),
-#                         (M, 2.2380520016508463),
-#                         (N, 2.2380520016508463),
-#                         (sxx, 500), (syy, 700), (szz, 200),
-#                         (sxy, 100), (sxz, 200), (syz, 300), ]))
