@@ -51,26 +51,6 @@ def calc_phi(stress, c_params, YLDM):
     return phi
 
 
-def calc_phi2(stress, c_params, YLDM):
-    yld_C_prime, yld_C_Db_prime = make_C_matrix(c_params)
-    s_prime = yld_C_prime@stress
-    s_Db_prime = yld_C_Db_prime@stress
-    s_prime_mat = np.array([[s_prime[0], s_prime[3], s_prime[4]],
-                            [s_prime[3], s_prime[1], s_prime[5]],
-                            [s_prime[4], s_prime[5], s_prime[2]]])
-    s_Db_prime_mat = np.array([[s_Db_prime[0], s_Db_prime[3], s_Db_prime[4]],
-                               [s_Db_prime[3], s_Db_prime[1], s_Db_prime[5]],
-                               [s_Db_prime[4], s_Db_prime[5], s_Db_prime[2]]])
-    pri_stress, _v = LA.eig(s_prime_mat)
-    pri_Db_stress, _v = LA.eig(s_Db_prime_mat)
-    phi = 0.0
-    for i in range(3):
-        for j in range(3):
-            phi += abs(pri_stress[i] - pri_Db_stress[j])**YLDM
-
-    return phi
-
-
 def calc_angled_eqStress(angle, c_params, YLDM):
     if angle == "EB":
         angled_stress = np.array([0, 0, 1, 0, 0, 0])
@@ -113,13 +93,13 @@ def calc_dphids(angle, c_params, YLDM):
         angled_stress = np.array([-1/3.0, -1/3.0, 2/3.0, 0, 0, 0])
     else:
         angle = math.pi*float(angle)/180.0
-        angled_stress = np.array([math.cos(angle)**2 - 1/3.0, math.sin(angle)**2 - 1/3.0, -1/3.0,
-                                  math.sin(angle)*math.cos(angle), 0, 0])
-    phi = calc_phi2(angled_stress, c_params, YLDM)
+        angled_stress = np.array([math.cos(angle)**2, math.sin(angle)**2,
+                                  0, math.sin(angle)*math.cos(angle), 0, 0])
+    phi = calc_phi(angled_stress, c_params, YLDM)
     for i in range(6):
         sub_angled_stress = angled_stress.copy()
         sub_angled_stress[i] += DELTAX
-        sub_phi = calc_phi2(sub_angled_stress, c_params, YLDM)
+        sub_phi = calc_phi(sub_angled_stress, c_params, YLDM)
         dphids[i] = (sub_phi - phi)/DELTAX
     return dphids
 
@@ -137,9 +117,8 @@ def calc_angled_r(angle, c_params, YLDM):
     if angle == "EB":
         r = dphids[1]/dphids[0]
     else:
-        # r = -1.0 - (4*YLDM)/(predicted_stress*dphids[2])
         angle = math.pi*float(angle)/180.0
-        r = (2.0*dfds[3]*math.cos(angle)*math.sin(angle)-dfds[0]*math.sin(angle)**2 -
+        r = (dfds[3]*math.cos(angle)*math.sin(angle)-dfds[0]*math.sin(angle)**2 -
              dfds[1]*math.cos(angle)**2)/(dfds[0]+dfds[1])
     return r
 
@@ -177,6 +156,5 @@ if __name__ == "__main__":
     wb = 0.01
     # error = error_func(exp_data, c_params, YLDM, wp, wb)
     # print(error)
-    # print(calc_angled_r("45", c_params, YLDM))
     c_params = gradient_descent(exp_data, YLDM, wp, wb)
     print(c_params)
