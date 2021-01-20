@@ -216,7 +216,7 @@
       eqGStress = calc_eqStress(YLDM,g_yldCPrime,g_yldCDbPrime,STRESS)
       CALL calc_dfdS(YLDM,f_yldCPrime,f_yldCDbPrime,STRESS,dfdS)
       CALL calc_dfdS(YLDM,g_yldCPrime,g_yldCDbPrime,STRESS,dGdS)
-      CALL calc_ddGddS(YLDM,yldCPrime,yldCDbPrime,STRESS,dGdS,ddGddS)
+      CALL calc_ddGddS(YLDM,g_yldCPrime,g_yldCDbPrime,STRESS,dGdS,ddGddS)
       CALL calc_Inverse(6,DDSDDE,invDDSDDE)
       invB(:,:) = invDDSDDE(:,:) + lambda*ddGddS(:,:)
       CALL calc_Inverse(6,invB,B)
@@ -260,7 +260,7 @@
       DO i=1,6
         subStress(:) = STRESS(:)
         subStress(i) = subStress(i) + DELTAX
-        CALL calc_dGdS(YLDM,yldCPrime,yldCDbPrime,STRESS,subdGdS)
+        CALL calc_dfdS(YLDM,yldCPrime,yldCDbPrime,STRESS,subdGdS)
         ddGddS(:,i) = (subdGdS(:) - dGdS(:))/DELTAX
       END DO  
       RETURN
