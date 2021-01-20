@@ -11,8 +11,12 @@ yld_T = np.array([[2, -1, -1, 0, 0, 0],
                   [0, 0, 0, 0, 0, 3]])
 yld_T = yld_T/3.0
 
-hill_params = np.array([0.570281847241541, 0.3632288531248622,
-                        0.6367711468751378, 2.5710503236965727])
+
+# hill_params = np.array([0.570281847241541, 0.3632288531248622,
+#                         0.6367711468751378, 2.5710503236965727])
+
+hill_params = np.array([0.25216953733566727, 0.8254230293025175,
+                        0.17457697069748246, 2.2380520016508463])
 
 
 def calc_eqStress(stress, hill_params):
@@ -41,6 +45,49 @@ def calc_angled_eqStress(angle, hill_params):
                                   0, math.sin(angle)*math.cos(angle), 0, 0])
     angled_eqStress = 1/calc_eqStress(angled_stress, hill_params)
     return angled_eqStress
+
+
+def calc_dfds(angle, hill_params):
+    # analytical method
+    dfds = np.ones(6)
+    if angle == "EB":
+        angled_stress = np.array([0, 0, 1, 0, 0, 0])
+    elif angle == "TDND":
+        angled_stress = np.array([0, 0, 0, 0, 0, 1.0])
+    elif angle == "NDRD":
+        angled_stress = np.array([0, 0, 0, 0, 1.0, 0])
+    elif angle == "TDND45":
+        angled_stress = np.array([0, 0.5, 0.5, 0, 0, 0.5])
+    elif angle == "NDRD45":
+        angled_stress = np.array([0.5, 0, 0.5, 0, 0.5, 0])
+    else:
+        angle = math.pi*float(angle)/180.0
+        angled_stress = np.array([math.cos(angle)**2, math.sin(angle)**2,
+                                  0, math.sin(angle)*math.cos(angle), 0, 0])
+    angled_eqStress = calc_angled_eqStress(angle, hill_params)
+    multiplier = 0.75/(sum(hill_params[:3])*angled_eqStress)
+    dfds[0] = -2*hill_params[1]*(angled_stress[2] - angled_stress[0]) + \
+        2*hill_params[2]*(angled_stress[0]-angled_stress[1])
+    dfds[1] = 2*hill_params[0]*(angled_stress[1]-angled_stress[2]) - \
+        2*hill_params[2]*(angled_stress[0]-angled_stress[1])
+    dfds[2] = -2*hill_params[0]*(angled_stress[1]-angled_stress[2]) + \
+        2*hill_params[1]*(angled_stress[2]-angled_stress[0])
+    dfds[3] = 4*hill_params[3]*angled_stress[3]
+    dfds[4] = 4*hill_params[3]*angled_stress[4]
+    dfds[5] = 4*hill_params[3]*angled_stress[5]
+    dfds *= multiplier
+    return dfds
+
+
+def calc_angled_r(angle, hill_params):
+    dfds = calc_dfds(angle, hill_params)
+    if angle == "EB":
+        r = dfds[1]/dfds[0]
+    else:
+        angle = math.pi*float(angle)/180.0
+        r = (dfds[3]*math.cos(angle)*math.sin(angle)-dfds[0]*math.sin(angle)**2 -
+             dfds[1]*math.cos(angle)**2)/(dfds[0]+dfds[1])
+    return r
 
 
 def calc_hill_params():
@@ -88,5 +135,6 @@ def calc_hill_params():
 
 
 if __name__ == "__main__":
-    # hill_f_params, hill_g_params = calc_hill_params()
-    print(calc_angled_eqStress("30", hill_params))
+    hill_f_params, hill_g_params = calc_hill_params()
+    # print(calc_angled_eqStress("45", hill_params))
+    # print(calc_angled_r("45", hill_params))
