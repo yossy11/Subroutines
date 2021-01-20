@@ -63,14 +63,18 @@ def calc_angled_eqStress(angle, c_params, YLDM):
     return angled_eqStress
 
 
-def error_func(exp_data, c_params, YLDM, wp, wb):
+def error_func(exp_data, c_params, YLDM, wp, wq, wb):
     error = 0
     for data in exp_data:
-        predicted_stress = calc_angled_eqStress(data["orientation"], c_params, YLDM)
-        if data["orientation"] == "EB":
+        angle = data["orientation"]
+        predicted_stress = calc_angled_eqStress(angle, c_params, YLDM)
+        predicted_r = calc_angled_r(angle, c_params, YLDM)
+        if angle == "EB":
             error += wb*(predicted_stress/float(data["normalized_yield_stress"])-1.0)**2
+            error += wb*(predicted_r/float(data["r_value"])-1.0)**2
         else:
             error += wp*(predicted_stress/float(data["normalized_yield_stress"])-1.0)**2
+            error += wq*(predicted_r/float(data["r_value"])-1.0)**2
     return error
 
 
@@ -84,6 +88,18 @@ def calc_dsdc(angle, c_params, YLDM):
         sub_predicted_stress = calc_angled_eqStress(angle, sub_c_params, YLDM)
         dsdc[i] = (sub_predicted_stress - predicted_stress)/DELTAX
     return dsdc
+
+
+def calc_drdc(angle, c_params, YLDM):
+    DELTAX = 1.0e-6
+    drdc = np.ones(18)
+    predicted_r = calc_angled_r(angle, c_params, YLDM)
+    for i in range(18):
+        sub_c_params = c_params.copy()
+        sub_c_params[i] += DELTAX
+        sub_predicted_r = calc_angled_r(angle, sub_c_params, YLDM)
+        drdc[i] = (sub_predicted_r - predicted_r)/DELTAX
+    return drdc
 
 
 def calc_dphids(angle, c_params, YLDM):
@@ -123,32 +139,39 @@ def calc_angled_r(angle, c_params, YLDM):
     return r
 
 
-def calc_error_gradient(exp_data, c_params, YLDM, wp, wb):
+def calc_error_gradient(exp_data, c_params, YLDM, wp, wq, wb):
     gradient = np.zeros(18)
     for data in exp_data:
-        predicted_stress = calc_angled_eqStress(data["orientation"], c_params, YLDM)
+        angle = data["orientation"]
+        predicted_stress = calc_angled_eqStress(angle, c_params, YLDM)
+        predicted_r = calc_angled_r(angle, c_params, YLDM)
         exp_stress = float(data["normalized_yield_stress"])
-        dsdc = calc_dsdc(data["orientation"], c_params, YLDM)
-        if data["orientation"] == "EB":
-            weight = wb
+        exp_r = float(data["r_value"])
+        dsdc = calc_dsdc(angle, c_params, YLDM)
+        drdc = calc_drdc(angle, c_params, YLDM)
+        if angle == "EB":
+            gradient += (wb*2.0*(predicted_stress/exp_stress - 1.0)/exp_stress)*dsdc
+            gradient += (wb*2.0*(predicted_r/exp_r - 1.0)/exp_r)*drdc
         else:
-            weight = wp
-        gradient += (weight*2.0*(predicted_stress/exp_stress - 1.0)/exp_stress)*dsdc
+            gradient += (wp*2.0*(predicted_stress/exp_stress - 1.0)/exp_stress)*dsdc
+            gradient += (wq*2.0*(predicted_r/exp_r - 1.0)/exp_r)*drdc
     return gradient
 
 
-def gradient_descent(exp_data, YLDM, wp, wb):
+def gradient_descent(exp_data, YLDM, wp, wq, wb):
     learning_rate = 1.0e-1
-    c_params = np.ones(18)
-    with open('Datas/error.csv', 'w') as f:
+    # c_params = np.ones(18)
+    c_params = np.array([-0.0698, 0.9364, 0.0791, 1.0030, 0.5247, 1.3631, 0.9543, 1.0690, 1.0237,
+                         0.9811, 0.4767, 0.5753, 0.8668, 1.1450, -0.0792, 1.4046, 1.1471, 1.0516])
+    with open('Datas/errortest.csv', 'w') as f:
         writer = csv.writer(f)
         header = ["iterationNum", "error", "c_params"]
         writer.writerow(header)
         for i in range(30000):
-            error = error_func(exp_data, c_params, YLDM, wp, wb)
+            error = error_func(exp_data, c_params, YLDM, wp, wq, wb)
             writer.writerow([i, error, ' '.join(map(str, c_params))])
             print(i, error)
-            gradient = calc_error_gradient(exp_data, c_params, YLDM, wp, wb)
+            gradient = calc_error_gradient(exp_data, c_params, YLDM, wp, wq, wb)
             c_params -= learning_rate*gradient
     return c_params
 
@@ -158,8 +181,7 @@ if __name__ == "__main__":
         reader = csv.DictReader(f)
         exp_data = [row for row in reader]
     wp = 1.0
+    wq = 0
     wb = 0.01
-    # error = error_func(exp_data, c_params, YLDM, wp, wb)
-    # print(error)
-    c_params = gradient_descent(exp_data, YLDM, wp, wb)
-    print(c_params)
+    # c_params = gradient_descent(exp_data, YLDM, wp, wq, wb)
+    # print(c_params)
