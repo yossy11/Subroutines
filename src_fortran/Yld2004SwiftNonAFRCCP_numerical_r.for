@@ -1,6 +1,6 @@
       ! This is UMAT subroutine made by yossy11
-      ! yield function : YLD2004-18p
-      ! plastic potential : Hill48
+      ! yield function : Hill48
+      ! plastic potential : YLD2004-18p
       ! hardening rule : Swift
       ! flow rule : non-AFR
       ! integration algorithm : CCP(convex cutting plane)
@@ -168,7 +168,7 @@
      & hillParams(2)*(STRESS(3)-STRESS(1))**2 + 
      & hillParams(3)*(STRESS(1)-STRESS(2))**2 + 
      & 2.0D0*hillParams(4)*SUM(STRESS(4:6)**2)
-      calc_eqGStress = SQRT(1.5D0*numerator/SUM(hillParams(1:3)))
+      calc_eqStress = SQRT(1.5D0*numerator/SUM(hillParams(1:3)))
       RETURN
       END FUNCTION calc_eqStress
 
