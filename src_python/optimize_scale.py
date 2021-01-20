@@ -1,6 +1,11 @@
+# calculate the appropriate scale for DELTAX
+
 import math
 import csv
 import random
+import glob
+import numpy as np
+
 HILL_F = 0.25216953733566727
 HILL_G = 0.8254230293025175
 HILL_H = 0.17457697069748246
@@ -47,9 +52,6 @@ def diff_hill(DELTAX, sxx, syy, szz, sxy, sxz, syz):
 
 
 if __name__ == "__main__":
-    # print(diff_hill(1.0e-6, 300.0, 200.0, 100.0, 100.0, 100.0, 100.0))
-    print(diff_hill(1.0e-6, 84.5349, 113.6041, -1.2214, -118.2640, 9.8132, -11.6963))
-
     for i in range(8):
         DELTAX = 1.0*10**(-4-i)  # 1.0e-4 ~ 1.0e-11
         file_name = f'Datas/{DELTAX:.0e}.csv'
@@ -62,3 +64,25 @@ if __name__ == "__main__":
                     init_value.append(450*random.random())
                 writer.writerow(diff_hill(DELTAX, *init_value))
                 count += 1
+
+    with open("Datas/diff_of_diffs.csv", 'w') as f:
+        writer = csv.writer(f)
+        file_list = glob.glob('Datas/1e-*.csv')
+        for file_name in file_list:
+            print(file_name)
+            with open(file_name) as f:
+                reader = csv.reader(f)
+                datas = [row for row in reader]
+
+            new_datas = []
+            for data in datas:
+                data = [float(i) for i in data]
+                new_datas.append(data)
+            new_datas = np.array(new_datas)
+            result = np.zeros(6)
+            for data in new_datas:
+                result += data[12:]
+
+            result /= len(new_datas)
+            print(result)
+            writer.writerow([file_name, *result])
