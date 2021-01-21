@@ -28,8 +28,8 @@
      & calc_FlowStress,dfdS(6),dGdS(6),eqGStress,dLambda,F,H,lambda
 
       ! define constants
-      PARAMETER(TOLER=1.0D-5,YOUNG=6.9D4,POISSON=0.33D0,HARDK=646.0D0,
-     & HARDN=0.227D0,HARDSTRAIN0=2.5D-2,YLDM=8)
+      PARAMETER(TOLER=1.0D-5,YOUNG=2.1D5,POISSON=0.3D0,HARDK=541.0D0,
+     & HARDN=0.25D0,HARDSTRAIN0=4.0D-3,YLDM=6)
 
       ! anisotropic params
       f_yldCPrime(:,:) = 0.0D0
