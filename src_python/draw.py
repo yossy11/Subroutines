@@ -4,32 +4,6 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 
 
-yld_C_prime = np.array([[0, 0.0698, -0.9364, 0, 0, 0],
-                        [-0.0791, 0, -1.0030, 0, 0, 0],
-                        [-0.5247, -1.3631, 0, 0, 0, 0],
-                        [0, 0, 0, 0.9543, 0, 0],
-                        [0, 0, 0, 0, 1.0690, 0],
-                        [0, 0, 0, 0, 0, 1.0237]])
-
-
-yld_C_Db_prime = np.array([[0, -0.9811, -0.4767, 0, 0, 0],
-                           [-0.5753, 0, -0.8668, 0, 0, 0],
-                           [-1.1450, 0.0792, 0, 0, 0, 0],
-                           [0, 0, 0, 1.4046, 0, 0],
-                           [0, 0, 0, 0, 1.1471, 0],
-                           [0, 0, 0, 0, 0, 1.0516]])
-
-yld_T = np.array([[2, -1, -1, 0, 0, 0],
-                  [-1, 2, -1, 0, 0, 0],
-                  [-1, -1, 2, 0, 0, 0],
-                  [0, 0, 0, 3, 0, 0],
-                  [0, 0, 0, 0, 3, 0],
-                  [0, 0, 0, 0, 0, 3]])
-
-yld_T = yld_T/3.0
-yld_stress = 646*(0.025**0.227)
-
-
 yld_T = np.array([[2, -1, -1, 0, 0, 0],
                   [-1, 2, -1, 0, 0, 0],
                   [-1, -1, 2, 0, 0, 0],
@@ -90,58 +64,59 @@ def make_stress_vector(x, y, shear):
     return stress
 
 
-fig = plt.figure(dpi=192)
-ax = fig.add_subplot(111)
+def draw_yield_surface(shear_stresses):
+    fig = plt.figure(dpi=192)
+    ax = fig.add_subplot(111)
 
-# 下軸と左軸をそれぞれ中央へもってくる
-ax.spines['bottom'].set_position(('data', 0))
-ax.spines['left'].set_position(('data', 0))
+    # 下軸と左軸をそれぞれ中央へもってくる
+    ax.spines['bottom'].set_position(('data', 0))
+    ax.spines['left'].set_position(('data', 0))
 
-# 上軸と右軸を表示しない
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
+    # 上軸と右軸を表示しない
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
 
-# ax.spines['left'].set(position='zero')
-# ax.spines['bottom'].set(position='zero')
-delta = 0.025
-xrange = np.arange(-2, 2, delta)
-yrange = np.arange(-2, 2, delta)
-X, Y = np.meshgrid(xrange, yrange)
+    delta = 0.025
+    xrange = np.arange(-2, 2, delta)
+    yrange = np.arange(-2, 2, delta)
+    X, Y = np.meshgrid(xrange, yrange)
 
-# 軸の設定
-plt.axis([-2, 2, -2, 2])
-plt.gca().set_aspect('equal', adjustable='box')
+    # 軸の設定
+    ax.set_xlim(-2, 2)
+    ax.set_ylim(-2, 2)
 
-# 描画
-Z = np.empty_like(X)
-Zs = np.array([Z]*10)
-for i in range(len(X)):
-    for j in range(len(X)):
-        stress = make_stress_vector(X[i][j], Y[i][j], 0)
-        Z[i][j] = calc_eqStress(stress, c_params, YLDM)
-        # for k in range(10):
-        #     stress = make_stress_vector(X[i][j], Y[i][j], k*0.05)
-        #     Zs[k][i][j] = calc_eqStress(stress, c_params, YLDM)
+    # アスペクト比の設定
+    ax.set_aspect('equal', adjustable='box')
+
+    # 描画
+    Z = np.empty_like(X)
+    Zs = np.array([Z]*len(shear_stresses))
+    for i in range(len(X)):
+        for j in range(len(X)):
+            for k, shear_stress in enumerate(shear_stresses):
+                stress = make_stress_vector(X[i][j], Y[i][j], shear_stress)
+                Zs[k][i][j] = calc_eqStress(stress, c_params, YLDM)
+
+    for i in range(len(shear_stresses)):
+        blue = format(int(255*i/len(shear_stresses)), '02x')
+        color = f'#9900{blue}'
+        ax.contour(X, Y, Zs[i], [1], colors=[color])
+
+    # 実験値をplot
+    exp_x = [-1.01739, 0.01144, 1.00051, 1.04027, 0.0015, -0.98757]
+    exp_y = [-1.02588, -0.90504, 0.00771, 1.03052, 0.9104, 0.00771, ]
+    exps, = plt.plot(exp_x, exp_y, marker='o', markersize=4,
+                     color="black", linestyle='None', label="exp")
+
+    # 凡例の設定
+    yld_patch = mpatches.Patch(color='#990000', linewidth=1, label=f'm={YLDM}')
+    ax.legend(handles=[(exps), yld_patch])
+    # ax.legend(handles=[yld_patch])
+    ax.grid(color='black', linestyle='dotted', linewidth=1)
+    fig.savefig("test.png")
 
 
-# contours = plt.contour(X, Y, Z, [1], colors=["red"])
-
-for i in range(10):
-    blue = format(int(255*i/10), '02x')
-    color = f'#9900{blue}'
-    plt.contour(X, Y, Zs[i], [1], colors=[color])
-
-# exp_x = [-1.01739, 0.01144, 1.00051, 1.04027, 0.0015, -0.98757]
-# exp_y = [-1.02588, -0.90504, 0.00771, 1.03052, 0.9104, 0.00771, ]
-# exps, = plt.plot(exp_x, exp_y, marker='o', markersize=4,
-#                  color="black", linestyle='None', label="exp")
-
-
-yld_patch = mpatches.Patch(color='#990000', linewidth=1, label='m=9')
-# plt.legend(handles=[(exps), yld_patch])
-plt.legend(handles=[yld_patch])
-plt.grid(color='black', linestyle='dotted', linewidth=1)
-# ax.clabel(contours, ["Yld2004-18P"], inline=True, fontsize=10)
-# plt.legend(bbox_to_anchor=(1, 1), loc='upper right', borderaxespad=0, fontsize=18)
-plt.show()
-plt.savefig("figuretest.png")  # -----(2)
+if __name__ == "__main__":
+    # shear_stresses = np.arange(0, 0.5, 0.05)
+    shear_stresses = [0, 0.25]
+    draw_yield_surface(shear_stresses)
