@@ -104,7 +104,7 @@ def draw_yield_surface(shear_stresses):
 
     # 実験値をplot
     exp_x = [-1.01739, 0.01144, 1.00051, 1.04027, 0.0015, -0.98757]
-    exp_y = [-1.02588, -0.90504, 0.00771, 1.03052, 0.9104, 0.00771, ]
+    exp_y = [-1.02588, -0.90504, 0.00771, 1.03052, 0.9104, 0.00771]
     exps, = plt.plot(exp_x, exp_y, marker='o', markersize=4,
                      color="black", linestyle='None', label="exp")
 
