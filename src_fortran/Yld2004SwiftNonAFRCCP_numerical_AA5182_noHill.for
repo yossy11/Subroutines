@@ -34,49 +34,49 @@
       ! anisotropic params
       f_yldCPrime(:,:) = 0.0D0
       f_yldCDbPrime(:,:) = 0.0D0
+      
+      f_yldCPrime(1,2) = -0.6475785538212648D0
+      f_yldCPrime(1,3) = -1.2536512747746833D0
+      f_yldCPrime(2,1) = -0.5627644741246058D0
+      f_yldCPrime(2,3) = -1.274219628061064D0
+      f_yldCPrime(3,1) = -1.2031808025197146D0
+      f_yldCPrime(3,2) = -1.3208093321301533D0
+      f_yldCPrime(4,4) = 0.7948968856219871D0
+      f_yldCPrime(5,5) = 0.8D0
+      f_yldCPrime(6,6) = 0.8D0
 
-      f_yldCPrime(1,2) = -0.056940277665336686D0
-      f_yldCPrime(1,3) = -0.9859971641591349D0
-      f_yldCPrime(2,1) = -0.1986277232332533D0
-      f_yldCPrime(2,3) = -0.9313609018430112D0
-      f_yldCPrime(3,1) = -0.5871124291038275D0
-      f_yldCPrime(3,2) = -1.330942716974344D0
-      f_yldCPrime(4,4) = 0.944649833438939D0
-      f_yldCPrime(5,5) = 1.090740680806561D0
-      f_yldCPrime(6,6) = 1.0925155792832137D0
-
-      f_yldCDbPrime(1,2) = -1.0763323731674885D0
-      f_yldCDbPrime(1,3) = -0.4323653254398786D0
-      f_yldCDbPrime(2,1) = -0.613688607514406D0
-      f_yldCDbPrime(2,3) = -0.9659074930180515D0
-      f_yldCDbPrime(3,1) = -1.1519059774170437D0
-      f_yldCDbPrime(3,2) = 0.08362991282554624D0
-      f_yldCDbPrime(4,4) = 1.4567012369610057D0
-      f_yldCDbPrime(5,5) = 1.1752482654026506D0
-      f_yldCDbPrime(6,6) = 1.116415832572442D0
+      f_yldCDbPrime(1,2) = -0.6941629670099572D0
+      f_yldCDbPrime(1,3) = -1.2556996868923211D0
+      f_yldCDbPrime(2,1) = -0.7438595081999301D0
+      f_yldCDbPrime(2,3) = -1.2703126546859607D0
+      f_yldCDbPrime(3,1) = -1.3413264548496133D0
+      f_yldCDbPrime(3,2) = -1.1886027325772275D0
+      f_yldCDbPrime(4,4) = 0.6119826435201945D0
+      f_yldCDbPrime(5,5) = 0.8D0
+      f_yldCDbPrime(6,6) = 0.8D0
 
       g_yldCPrime(:,:) = 0.0D0
       g_yldCDbPrime(:,:) = 0.0D0
 
-      g_yldCPrime(1,2) = 1.0012317560794066
-      g_yldCPrime(1,3) = 1.0262674377032943
-      g_yldCPrime(2,1) = 0.9835504446008857
-      g_yldCPrime(2,3) = 1.0515536144267688
-      g_yldCPrime(3,1) = 1.0437768424920715
-      g_yldCPrime(3,2) = 1.0338125030893484
-      g_yldCPrime(4,4) = 1.0035437885810963
-      g_yldCPrime(5,5) = 0.8
-      g_yldCPrime(6,6) = 0.8
+      g_yldCPrime(1,2) = -1.0012317560794066D0
+      g_yldCPrime(1,3) = -1.0262674377032943D0
+      g_yldCPrime(2,1) = -0.9835504446008857D0
+      g_yldCPrime(2,3) = -1.0515536144267688D0
+      g_yldCPrime(3,1) = -1.0437768424920715D0
+      g_yldCPrime(3,2) = -1.0338125030893484D0
+      g_yldCPrime(4,4) = 1.0035437885810963D0
+      g_yldCPrime(5,5) = 0.8D0
+      g_yldCPrime(6,6) = 0.8D0
 
-      g_yldCDbPrime(1,2) = 1.0013459199289196
-      g_yldCDbPrime(1,3) = 1.0260273388701102
-      g_yldCDbPrime(2,1) = 0.9837382692828789
-      g_yldCDbPrime(2,3) = 1.0512840470585616
-      g_yldCDbPrime(3,1) = 1.0438482934163833
-      g_yldCDbPrime(3,2) = 1.033732487971367
-      g_yldCDbPrime(4,4) = 1.0035726217355714
-      g_yldCDbPrime(5,5) = 0.8
-      g_yldCDbPrime(6,6) = 0.8
+      g_yldCDbPrime(1,2) = -1.0013459199289196D0
+      g_yldCDbPrime(1,3) = -1.0260273388701102D0
+      g_yldCDbPrime(2,1) = -0.9837382692828789D0
+      g_yldCDbPrime(2,3) = -1.0512840470585616D0
+      g_yldCDbPrime(3,1) = -1.0438482934163833D0
+      g_yldCDbPrime(3,2) = -1.033732487971367D0
+      g_yldCDbPrime(4,4) = 1.0035726217355714D0
+      g_yldCDbPrime(5,5) = 0.8D0
+      g_yldCDbPrime(6,6) = 0.8D0
 
       ! this subroutine can be used only on the condition of NDI=NSHR=3
       IF (NDI/=3 .or. NSHR/=3) THEN
