@@ -221,5 +221,6 @@ if __name__ == "__main__":
     wp = 1.0
     wq = 0.1
     wb = 0.01
-    c_params = gradient_descent(exp_data, YLDM, wp, wq, wb)
-    print(c_params)
+    # c_params = gradient_descent(exp_data, YLDM, wp, wq, wb)
+    # print(c_params)
+    print(calc_angled_eqStress("30", c_params, YLDM))
