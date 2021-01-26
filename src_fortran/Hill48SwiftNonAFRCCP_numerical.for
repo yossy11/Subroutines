@@ -33,15 +33,15 @@
 
 
       ! anisotropic params
-      hillFParams(1) = 0.570281847241541
-      hillFParams(2) = 0.3632288531248622
-      hillFParams(3) = 0.6367711468751378
-      hillFParams(4) = 2.5710503236965727
+      hillFParams(1) = 0.570281847241541D0
+      hillFParams(2) = 0.3632288531248622D0
+      hillFParams(3) = 0.6367711468751378D0
+      hillFParams(4) = 2.5710503236965727D0
 
-      hillGParams(1) = 0.25216953733566727
-      hillGParams(2) = 0.8254230293025175
-      hillGParams(3) = 0.17457697069748246
-      hillGParams(4) = 2.2380520016508463
+      hillGParams(1) = 0.25216953733566727D0
+      hillGParams(2) = 0.8254230293025175D0
+      hillGParams(3) = 0.17457697069748246D0
+      hillGParams(4) = 2.2380520016508463D0
 
 
       ! this subroutine can be used only on the condition of NDI=NSHR=3
