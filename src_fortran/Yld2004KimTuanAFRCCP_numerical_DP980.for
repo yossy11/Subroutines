@@ -185,6 +185,10 @@
      & HARDSTRESS0,eqpStrain)
       IMPLICIT NONE
       DOUBLE PRECISION HARDK,HARDT,HARDA,HARDH,HARDSTRESS0,eqpStrain
+      IF (eqpStrain == 0.0D0) THEN
+        calc_FlowStress = HARDSTRESS0
+        RETURN
+      END IF
       calc_FlowStress = HARDSTRESS0 + 
      & HARDK*(1.0D0-EXP(-1.0D0*HARDT*eqpStrain**HARDA))*eqpStrain**HARDH
       RETURN
@@ -196,6 +200,10 @@
      & HARDSTRESS0,eqpStrain)
       IMPLICIT NONE
       DOUBLE PRECISION HARDK,HARDT,HARDA,HARDH,HARDSTRESS0,eqpStrain
+      IF (eqpStrain == 0.0D0) THEN
+        calc_H = 0.0D0
+        RETURN
+      END IF
       calc_H = (HARDK*HARDA*HARDT*eqpStrain**(HARDA-1.0D0))*
      & EXP(-1.0D0*HARDT*eqpStrain**HARDA)
       calc_H = calc_H + 
