@@ -19,6 +19,9 @@ yld_T = yld_T/3.0
 a_params = np.array([0.9477, 1.1033, 0.7719, 0.9393, 0.9524, 0.8086, 0.9935, 1.1375])
 YLDM = 6
 
+# DP980
+a_params = np.array([0.9499, 0.9781, 0.9771, 0.9659, 1.0321, 1.0267, 1.0181, 1.0282])
+
 
 def make_C_matrix(a_params):
     yld_C_prime = np.array([[a_params[0], 0, 0, 0, 0, 0],
