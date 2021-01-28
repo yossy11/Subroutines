@@ -35,25 +35,25 @@
       yldCPrime(:,:) = 0.0D0
       yldCDbPrime(:,:) = 0.0D0
 
-      yldCPrime(1,2) = 0.0698D0
-      yldCPrime(1,3) = -0.9364D0
-      yldCPrime(2,1) = -0.0791D0
-      yldCPrime(2,3) = -1.0030D0
-      yldCPrime(3,1) = -0.5247D0
-      yldCPrime(3,2) = -1.3631D0
-      yldCPrime(4,4) = 0.9543D0
-      yldCPrime(5,5) = 1.0690D0
-      yldCPrime(6,6) = 1.0237D0
+      yldCPrime(1,2) = -0.39779450632876606D0
+      yldCPrime(1,3) = 1.206383556360428D0
+      yldCPrime(2,1) = -0.030914908406889756D0
+      yldCPrime(2,3) = 0.41502370475308104D0
+      yldCPrime(3,1) = 0.611844350183751D0
+      yldCPrime(3,2) = 1.2457926227859286D0
+      yldCPrime(4,4) = 1.05216301509492D0
+      yldCPrime(5,5) = 1.0891639883709514D0
+      yldCPrime(6,6) = 1.0942732961579236D0
 
-      yldCDbPrime(1,2) = -0.9811D0
-      yldCDbPrime(1,3) = -0.4767D0
-      yldCDbPrime(2,1) = -0.5753D0
-      yldCDbPrime(2,3) = -0.8668D0
-      yldCDbPrime(3,1) = -1.1450D0
-      yldCDbPrime(3,2) = 0.0792D0
-      yldCDbPrime(4,4) = 1.4046D0
-      yldCDbPrime(5,5) = 1.1471D0
-      yldCDbPrime(6,6) = 1.0516D0
+      yldCDbPrime(1,2) = 0.8907517345780359D0
+      yldCDbPrime(1,3) = 0.4612180511668874D0
+      yldCDbPrime(2,1) = 0.4530285698797228D0
+      yldCDbPrime(2,3) = 0.9205876066026989D0
+      yldCDbPrime(3,1) = 1.1260860977141034D0
+      yldCDbPrime(3,2) = -0.3097292091953199D0
+      yldCDbPrime(4,4) = 1.3224559708004007D0
+      yldCDbPrime(5,5) = 1.1655978386637185D0
+      yldCDbPrime(6,6) = 1.1218045825763143D0
 
       hillParams(1) = 0.25216953733566727
       hillParams(2) = 0.8254230293025175
