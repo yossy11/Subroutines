@@ -65,7 +65,7 @@ def draw():
         ax.axis[direction].toggle(all=False)
         ax.axis[direction].set_axisline_style("-|>")
 
-    fig.savefig("test.png")
+    fig.savefig("Images/analytical_cup_height.png")
 
 
 if __name__ == "__main__":
