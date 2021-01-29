@@ -87,7 +87,8 @@
           CALL updateSTATEV(NSTATV,STATEV,eStrain,pStrain,eqpStrain)
           IF (iterationNum /= 0) THEN
             CALL updateDDSDDE(hillFParams,hillGParams,STRESS,DDSDDE,
-     &       lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
+     &       lambda,eqStress,HARDK,HARDT,HARDA,HARDH,HARDSTRESS0,
+     &       eqpStrain)
           END IF
           RETURN
         END IF
