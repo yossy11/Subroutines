@@ -35,30 +35,30 @@
       yldCPrime(:,:) = 0.0D0
       yldCDbPrime(:,:) = 0.0D0
 
-      yldCPrime(1,2) = 0.0886854047870808D0
-      yldCPrime(1,3) = -0.9429229667580311D0
-      yldCPrime(2,1) = -0.09267021207848619D0
-      yldCPrime(2,3) = -1.009912085581944D0
-      yldCPrime(3,1) = -0.5238413986349356D0
-      yldCPrime(3,2) = -1.3442568864066322D0
-      yldCPrime(4,4) = 0.9131917439898614D0
-      yldCPrime(5,5) = 1.069D0
-      yldCPrime(6,6) = 1.0237D0
+      yldCPrime(1,2) = 0.39041623190900254D0
+      yldCPrime(1,3) = -1.2085606862513412D0
+      yldCPrime(2,1) = 0.022842960001355474D0
+      yldCPrime(2,3) = -0.41980993661904814D0
+      yldCPrime(3,1) = -0.6058009259523878D0
+      yldCPrime(3,2) = -1.24418287683899D0
+      yldCPrime(4,4) = 1.0560139963927146D0
+      yldCPrime(5,5) = 1.0891167207195427D0
+      yldCPrime(6,6) = 1.0937908219648715D0
 
-      yldCDbPrime(1,2) = -1.0386610160441099D0
-      yldCDbPrime(1,3) = -0.44958967140708755D0
-      yldCDbPrime(2,1) = -0.567326932954492D0
-      yldCDbPrime(2,3) = -0.882887567688924D0
-      yldCDbPrime(3,1) = -1.1583495560200927D0
-      yldCDbPrime(3,2) = 0.070435449649093D0
-      yldCDbPrime(4,4) = 1.4468828483137326D0
-      yldCDbPrime(5,5) = 1.1471D0
-      yldCDbPrime(6,6) = 1.0516D0
+      yldCDbPrime(1,2) = -0.8929749195662852D0
+      yldCDbPrime(1,3) = -0.451977984957348D0
+      yldCDbPrime(2,1) = -0.45689003976724196D0
+      yldCDbPrime(2,3) = -0.9205647370007469D0
+      yldCDbPrime(3,1) = -1.1227253204886476D0
+      yldCDbPrime(3,2) = 0.3010616487829765D0
+      yldCDbPrime(4,4) = 1.3166540502252138D0
+      yldCDbPrime(5,5) = 1.1659800747052957D0
+      yldCDbPrime(6,6) = 1.121007094144193D0
 
-      hillParams(1) = 0.25216953733566727
-      hillParams(2) = 0.8254230293025175
-      hillParams(3) = 0.17457697069748246
-      hillParams(4) = 2.2380520016508463
+      hillParams(1) = 0.25216953733566727D0
+      hillParams(2) = 0.8254230293025175D0
+      hillParams(3) = 0.17457697069748246D0
+      hillParams(4) = 2.2380520016508463D0
 
       ! this subroutine can be used only on the condition of NDI=NSHR=3
       IF (NDI/=3 .or. NSHR/=3) THEN
