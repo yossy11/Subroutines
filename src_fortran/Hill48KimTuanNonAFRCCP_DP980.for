@@ -200,7 +200,7 @@
      & DDSDDE(6,6),lambda,eqStress,HARDK,HARDT,HARDA,HARDH,
      & HARDSTRESS0,eqpStrain,eqGStress,calc_eqGStress,dfdS(6),dGdS(6),
      & ddGddS(6,6),A(7,7),B(6,6),invB(6,6),invDDSDDE(6,6),h0,subVec(7),
-     & vec1(7),vec2(7),H,C(7,7),subDDSDDE(6,6)
+     & vec1(7),vec2(7),H,calc_H,C(7,7),subDDSDDE(6,6)
       subDDSDDE(:,:) = DDSDDE(:,:)
       eqGStress = calc_eqGStress(hillGParams,STRESS)
       CALL calc_dfdS(hillFParams,STRESS,dfdS)
