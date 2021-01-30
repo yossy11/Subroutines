@@ -62,22 +62,17 @@ def draw_yield_surface(shear_stresses):
     fig = plt.figure(dpi=192)
     ax = fig.add_subplot(111)
 
-    # 下軸と左軸をそれぞれ中央へもってくる
-    ax.spines['bottom'].set_position(('data', 0))
-    ax.spines['left'].set_position(('data', 0))
-
-    # 上軸と右軸を表示しない
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-
+    ax.set(xlabel='Normalized stress(xx)', ylabel='Normalized stress(yy)')
+    ax.axvline(x=0, color="black", linewidth=1)
+    ax.axhline(y=0, color="black", linewidth=1)
     delta = 0.025
-    xrange = np.arange(-2, 2, delta)
-    yrange = np.arange(-2, 2, delta)
+    xrange = np.arange(-1.5, 1.5, delta)
+    yrange = np.arange(-1.5, 1.5, delta)
     X, Y = np.meshgrid(xrange, yrange)
 
     # 軸の設定
-    ax.set_xlim(-2, 2)
-    ax.set_ylim(-2, 2)
+    ax.set_xlim(-1.5, 1.5)
+    ax.set_ylim(-1.5, 1.5)
 
     # アスペクト比の設定
     ax.set_aspect('equal', adjustable='box')
