@@ -244,9 +244,7 @@ def calc_error_gradient(exp_data, c_params, YLDM, wp, wq, wb):
 
 def gradient_descent(exp_data, YLDM, wp, wq, wb):
     learning_rate = 1.0e-1
-    # c_params = np.ones(18)
-    c_params = np.array([-0.0698, 0.9364, 0.0791, 1.0030, 0.5247, 1.3631, 0.9543, 1.0690, 1.0237,
-                         0.9811, 0.4767, 0.5753, 0.8668, 1.1450, -0.0792, 1.4046, 1.1471, 1.0516])
+    c_params = np.ones(18)
     with open('Datas/errortest.csv', 'w') as f:
         writer = csv.writer(f)
         header = ["iterationNum", "error", "c_params"]
