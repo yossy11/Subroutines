@@ -1,6 +1,6 @@
 import numpy.linalg as LA
 import numpy as np
-import matplotlib.patches as mpatches
+# import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 
 
@@ -13,12 +13,6 @@ yld_T = np.array([[2, -1, -1, 0, 0, 0],
 yld_T = yld_T/3.0
 c_params = np.array([-0.0698, 0.9364, 0.0791, 1.0030, 0.5247, 1.3631, 0.9543, 1.0690, 1.0237,
                      0.9811, 0.4767, 0.5753, 0.8668, 1.1450, -0.0792, 1.4046, 1.1471, 1.0516])
-c_params = np.array([-0.11714269625987313, 0.4677946760370396, -0.6329214118208218,
-                     0.1958292433240264, 0.20155498293410648, -0.5137137661110223,
-                     -1.1624636739743532, 1.082419111390934, 1.1164359346997557,
-                     1.1246439061566151, -0.3140781585816851, 0.2885538299610835,
-                     1.19435689224697, 1.3081518030712693, 0.5495801370099768,
-                     -1.2006650067491322, 1.090309427765219, 1.1181902696635893])
 YLDM = 8
 
 
@@ -103,20 +97,25 @@ def draw_yield_surface(shear_stresses):
         ax.contour(X, Y, Zs[i], [1], colors=[color])
 
     # 実験値をplot
-    exp_x = [-1.01739, 0.01144, 1.00051, 1.04027, 0.0015, -0.98757]
-    exp_y = [-1.02588, -0.90504, 0.00771, 1.03052, 0.9104, 0.00771]
+    # AA2090-T3
+    exp_x = [1.0, 0.0, 1.035]
+    exp_y = [0.0, 0.9102, 1.035]
+    # DP980
+    # exp_x = [1.0, 1.0608, 1.0785, 1.0513, 0.9873, 0.8302, 0.5775, 0.2794, 0.0]
+    # exp_y = [0.0, 0.2652, 0.5402, 0.7885, 0.9859, 1.1054, 1.1524, 1.1159, 1.0311]
     exps, = plt.plot(exp_x, exp_y, marker='o', markersize=4,
                      color="black", linestyle='None', label="exp")
 
     # 凡例の設定
-    yld_patch = mpatches.Patch(color='#990000', linewidth=1, label=f'm={YLDM}')
-    ax.legend(handles=[(exps), yld_patch])
+    # yld_patch = mpatches.Patch(color='#990000', linewidth=1, label=f'm={YLDM}')
+    # ax.legend(handles=[(exps), yld_patch])
     # ax.legend(handles=[yld_patch])
+    ax.legend(handles=[(exps)])
     ax.grid(color='black', linestyle='dotted', linewidth=1)
     fig.savefig("test.png")
 
 
 if __name__ == "__main__":
     # shear_stresses = np.arange(0, 0.5, 0.05)
-    shear_stresses = [0, 0.25]
+    shear_stresses = [0]
     draw_yield_surface(shear_stresses)
