@@ -11,12 +11,22 @@ yld_T = np.array([[2, -1, -1, 0, 0, 0],
                   [0, 0, 0, 0, 0, 3]])
 yld_T = yld_T/3.0
 
-
+# AA2090-T3
+# f
 # hill_params = np.array([0.570281847241541, 0.3632288531248622,
 #                         0.6367711468751378, 2.5710503236965727])
+# g
+# hill_params = np.array([0.25216953733566727, 0.8254230293025175,
+#                         0.17457697069748246, 2.2380520016508463])
 
-hill_params = np.array([0.25216953733566727, 0.8254230293025175,
-                        0.17457697069748246, 2.2380520016508463])
+# DP980
+# f
+hill_params = np.array([0.4844687812695614, 0.5441303900909464,
+                        0.4558696099090537, 1.5201303973492752])
+
+# g
+# hill_params = np.array([0.42610421732178394, 0.5913660555884093,
+#                         0.4086339444115908, 1.5770789230107995])
 
 
 def calc_eqStress(stress, hill_params):
@@ -91,7 +101,7 @@ def calc_angled_r(angle, hill_params):
 
 
 def calc_hill_params():
-    with open("Datas/AA2090-T3.csv") as f:
+    with open("Datas/DP980.csv") as f:
         reader = csv.DictReader(f)
         exp_data = [row for row in reader]
 
@@ -135,6 +145,8 @@ def calc_hill_params():
 
 
 if __name__ == "__main__":
-    hill_f_params, hill_g_params = calc_hill_params()
-    # print(calc_angled_eqStress("45", hill_params))
-    # print(calc_angled_r("45", hill_params))
+    # hill_f_params, hill_g_params = calc_hill_params()
+    for angle in ["0", "15", "30", "45", "60", "75", "90"]:
+        print(angle)
+        print("stress", calc_angled_eqStress(angle, hill_params))
+        print("r", calc_angled_r(angle, hill_params))
