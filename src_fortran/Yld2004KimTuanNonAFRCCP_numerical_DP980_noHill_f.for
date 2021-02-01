@@ -1,6 +1,6 @@
       ! This is UMAT subroutine made by yossy11
-      ! yield function : YLD2004-18p
-      ! plastic potential : YLD2004-18p
+      ! yield function : YLD2004-18p optimized
+      ! plastic potential : YLD2004-18p AFR
       ! hardening rule : Kim-Tuan
       ! flow rule : non-AFR
       ! integration algorithm : CCP(convex cutting plane)
