@@ -146,7 +146,10 @@ def calc_hill_params():
 
 if __name__ == "__main__":
     # hill_f_params, hill_g_params = calc_hill_params()
-    for angle in ["0", "15", "30", "45", "60", "75", "90"]:
+    # for angle in ["0", "15", "30", "45", "60", "75", "90", "EB"]:
+    #     print(angle)
+    #     print("stress", calc_angled_eqStress(angle, hill_params))
+    #     print("r", calc_angled_r(angle, hill_params))
+    for angle in ["TDND", "TDND45", "NDRD", "NDRD45"]:
         print(angle)
         print("stress", calc_angled_eqStress(angle, hill_params))
-        print("r", calc_angled_r(angle, hill_params))
