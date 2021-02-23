@@ -31,56 +31,56 @@
       ! define constants
       PARAMETER(TOLER=1.0D-5,YOUNG=6.9D4,POISSON=0.33D0)
 
-      ! define constants
+      ! define hardening constants
       PARAMETER(HARDK=646.0D0,HARDN=0.227D0,HARDSTRAIN0=2.5D-2,
      & YLDM=8.0D0)
 
       ! anisotropic params
       f_yldCPrime(:,:) = 0.0D0
       f_yldCDbPrime(:,:) = 0.0D0
+                       
+      f_yldCPrime(1,2) = -0.5677369567466022D0
+      f_yldCPrime(1,3) = -1.3048918894938901D0
+      f_yldCPrime(2,1) = -0.6041274337462236D0
+      f_yldCPrime(2,3) = -1.3619107041480343D0
+      f_yldCPrime(3,1) = -1.403576218080736D0
+      f_yldCPrime(3,2) = -1.2047066930584855D0
+      f_yldCPrime(4,4) = 0.5352287733257995D0
+      f_yldCPrime(5,5) = 1.0D0
+      f_yldCPrime(6,6) = 1.0D0
 
-      f_yldCPrime(1,2) = -0.056940277665336686D0
-      f_yldCPrime(1,3) = -0.9859971641591349D0
-      f_yldCPrime(2,1) = -0.1986277232332533D0
-      f_yldCPrime(2,3) = -0.9313609018430112D0
-      f_yldCPrime(3,1) = -0.5871124291038275D0
-      f_yldCPrime(3,2) = -1.330942716974344D0
-      f_yldCPrime(4,4) = 0.944649833438939D0
-      f_yldCPrime(5,5) = 1.090740680806561D0
-      f_yldCPrime(6,6) = 1.0925155792832137D0
-
-      f_yldCDbPrime(1,2) = -1.0763323731674885D0
-      f_yldCDbPrime(1,3) = -0.4323653254398786D0
-      f_yldCDbPrime(2,1) = -0.613688607514406D0
-      f_yldCDbPrime(2,3) = -0.9659074930180515D0
-      f_yldCDbPrime(3,1) = -1.1519059774170437D0
-      f_yldCDbPrime(3,2) = 0.08362991282554624D0
-      f_yldCDbPrime(4,4) = 1.4567012369610057D0
-      f_yldCDbPrime(5,5) = 1.1752482654026506D0
-      f_yldCDbPrime(6,6) = 1.116415832572442D0
+      f_yldCDbPrime(1,2) = -0.5480817415053474D0
+      f_yldCDbPrime(1,3) = -1.2470032531974167D0
+      f_yldCDbPrime(2,1) = -0.3903214745928533D0
+      f_yldCDbPrime(2,3) = -1.3585844128262983D0
+      f_yldCDbPrime(3,1) = -1.2696881944669043D0
+      f_yldCDbPrime(3,2) = -1.3944105663130655D0
+      f_yldCDbPrime(4,4) = 0.6643249523965057D0
+      f_yldCDbPrime(5,5) = 1.0D0
+      f_yldCDbPrime(6,6) = 1.0D0
 
       g_yldCPrime(:,:) = 0.0D0
       g_yldCDbPrime(:,:) = 0.0D0
 
-      g_yldCPrime(1,2) = 0.0681890550605269D0
-      g_yldCPrime(1,3) = -0.8728581783781829D0
-      g_yldCPrime(2,1) = -0.07883817293470376D0
-      g_yldCPrime(2,3) = -0.9800868482532625D0
-      g_yldCPrime(3,1) = -0.6396161030250869D0
-      g_yldCPrime(3,2) = -1.416739220885185D0
-      g_yldCPrime(4,4) = 1.0767566538602826D0
-      g_yldCPrime(5,5) = 1.069D0
-      g_yldCPrime(6,6) = 1.0237D0
+      g_yldCPrime(1,2) = -0.9900726733680804D0
+      g_yldCPrime(1,3) = -1.0148351190489264D0
+      g_yldCPrime(2,1) = -0.9726232443854402D0
+      g_yldCPrime(2,3) = -1.039810462417897D0
+      g_yldCPrime(3,1) = -1.0322865627637845D0
+      g_yldCPrime(3,2) = -1.0223590160295464D0
+      g_yldCPrime(4,4) = 0.9923216698310934D0
+      g_yldCPrime(5,5) = 1.0D0
+      g_yldCPrime(6,6) = 1.0D0
 
-      g_yldCDbPrime(1,2) = -0.936165230037105D0
-      g_yldCDbPrime(1,3) = -0.7827698684119997D0
-      g_yldCDbPrime(2,1) = -0.6837450696952991D0
-      g_yldCDbPrime(2,3) = -0.7782197960468684D0
-      g_yldCDbPrime(3,1) = -1.1210834461178005D0
-      g_yldCDbPrime(3,2) = 0.0930311520854942D0
-      g_yldCDbPrime(4,4) = 1.1682692085440296D0
-      g_yldCDbPrime(5,5) = 1.1471D0
-      g_yldCDbPrime(6,6) = 1.0516D0
+      g_yldCDbPrime(1,2) = -0.9900734717541109D0
+      g_yldCDbPrime(1,3) = -1.01483733432813D0
+      g_yldCDbPrime(2,1) = -0.9726225048559088D0
+      g_yldCDbPrime(2,3) = -1.03981519087893D0
+      g_yldCDbPrime(3,1) = -1.0322854648096973D0
+      g_yldCDbPrime(3,2) = -1.0223590263214553D0
+      g_yldCDbPrime(4,4) = 0.9923238700196437D0
+      g_yldCDbPrime(5,5) = 1.0D0
+      g_yldCDbPrime(6,6) = 1.0D0
 
       ! this subroutine can be used only on the condition of NDI=NSHR=3
       IF (NDI/=3 .or. NSHR/=3) THEN
@@ -460,7 +460,7 @@
      & HARDN,eqpStrain)
       IMPLICIT NONE
       DOUBLE PRECISION HARDK,HARDSTRAIN0,HARDN,eqpStrain
-      calc_FlowStress = HARDK*(HARDSTRAIN0 + eqpStrain)**HARDN
+      Swift = HARDK*(HARDSTRAIN0 + eqpStrain)**HARDN
       RETURN
       END FUNCTION Swift
 
