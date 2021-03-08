@@ -123,12 +123,8 @@
       ! calculate equivalent stress
       DOUBLE PRECISION FUNCTION calc_eqStress(hillParams,STRESS)
       IMPLICIT NONE
-      DOUBLE PRECISION hillParams(4),STRESS(6),numerator
-      numerator = hillParams(1)*(STRESS(2) - STRESS(3))**2 + 
-     & hillParams(2)*(STRESS(3)-STRESS(1))**2 + 
-     & hillParams(3)*(STRESS(1)-STRESS(2))**2 + 
-     & 2.0D0*hillParams(4)*SUM(STRESS(4:6)**2)
-      calc_eqStress = SQRT(1.5D0*numerator/SUM(hillParams(1:3)))
+      DOUBLE PRECISION hillParams(4),STRESS(6),hill48,hah
+      calc_eqStress = SQRT(hill48(hillParams,STRESS)+hah(STRESS))
       RETURN
       END FUNCTION calc_eqStress
 
@@ -136,12 +132,8 @@
       ! calculate equivalent stress with plastic potential G
       DOUBLE PRECISION FUNCTION calc_eqGStress(hillParams,STRESS)
       IMPLICIT NONE
-      DOUBLE PRECISION hillParams(4),STRESS(6),numerator
-      numerator = hillParams(1)*(STRESS(2) - STRESS(3))**2 + 
-     & hillParams(2)*(STRESS(3)-STRESS(1))**2 + 
-     & hillParams(3)*(STRESS(1)-STRESS(2))**2 + 
-     & 2.0D0*hillParams(4)*SUM(STRESS(4:6)**2)
-      calc_eqGStress = SQRT(1.5D0*numerator/SUM(hillParams(1:3)))
+      DOUBLE PRECISION hillParams(4),STRESS(6),hill48
+      calc_eqGStress = SQRT(hill48(hillParams,STRESS))
       RETURN
       END FUNCTION calc_eqGStress
 
@@ -168,6 +160,7 @@
       END SUBROUTINE updateSTATEV
 
 
+      ! TODO
       ! update tangent modulus
       SUBROUTINE updateDDSDDE(hillFParams,hillGParams,STRESS,DDSDDE,
      & lambda,eqStress,HARDK,HARDN,HARDSTRAIN0,eqpStrain)
@@ -220,8 +213,10 @@
       IMPLICIT NONE
       DOUBLE PRECISION hillParams(4),STRESS(6),dGdS(6),eqGStress,
      & calc_eqGStress,multiplier
+      
       eqGStress = calc_eqGStress(hillParams,STRESS)
-      multiplier = 0.75/(SUM(hillParams(1:3))*eqGStress)
+      multiplier = 0.5D0/eqGStress
+
       dGdS(1) = -1.0D0*2*hillParams(2)*(STRESS(3)-STRESS(1))+
      & 2*hillParams(3)*(STRESS(1)-STRESS(2))
       dGdS(2) = 2*hillParams(1)*(STRESS(2)-STRESS(3))-
@@ -241,9 +236,8 @@
       IMPLICIT NONE
       INTEGER i,j
       DOUBLE PRECISION hillParams(4),STRESS(6),dGdS(6),ddGddS(6,6),
-     & eqGStress,calc_eqGStress,multiplier
+     & eqGStress,calc_eqGStress
       eqGStress = calc_eqGStress(hillParams,STRESS)
-      multiplier = 0.75/(SUM(hillParams(1:3))*eqGStress)
 
       ddGddS(:,:) = 0.0D0
       ddGddS(1,1) = 2*hillParams(2) + 2*hillParams(3)
@@ -260,7 +254,7 @@
       ddGddS(3,2) = -1.0D0*2*hillParams(1)
       DO i=1,6
         DO j=1,6
-          ddGddS(i,j) = multiplier*ddGddS(i,j) - 
+          ddGddS(i,j) = ddGddS(i,j)/(2.0D0*eqGStress) - 
      &     dGdS(i)*dGdS(j)/eqGStress
         END DO
       END DO
@@ -269,47 +263,21 @@
 
 
       ! calculate differential of yield function
-      SUBROUTINE calc_dfdS(hillParams,STRESS,dGdS)
+      SUBROUTINE calc_dfdS(hillParams,STRESS,dfds)
       IMPLICIT NONE
-      DOUBLE PRECISION hillParams(4),STRESS(6),dGdS(6),eqGStress,
-     & calc_eqStress,multiplier
-      eqGStress = calc_eqStress(hillParams,STRESS)
-      multiplier = 0.75/(SUM(hillParams(1:3))*eqGStress)
-      dGdS(1) = -1.0D0*2*hillParams(2)*(STRESS(3)-STRESS(1))+
-     & 2*hillParams(3)*(STRESS(1)-STRESS(2))
-      dGdS(2) = 2*hillParams(1)*(STRESS(2)-STRESS(3))-
-     & 2*hillParams(3)*(STRESS(1)-STRESS(2))
-      dGdS(3) = -1.0D0*2*hillParams(1)*(STRESS(2)-STRESS(3))+
-     & 2*hillParams(2)*(STRESS(3)-STRESS(1))
-      dGdS(4) = 4*hillParams(4)*STRESS(4)
-      dGdS(5) = 4*hillParams(4)*STRESS(5)
-      dGdS(6) = 4*hillParams(4)*STRESS(6)
-      dGdS(:) = dGdS(:) * multiplier
+      INTEGER i
+      DOUBLE PRECISION hillParams(4),STRESS(6),subStress(6),eqStress,
+     & subEqStress,calc_eqStress,DELTAX,dfds(6)
+      DELTAX = 1.0D-6
+      eqStress = calc_eqStress(hillParams,STRESS)
+      DO i=1,6
+        subStress(:) = STRESS(:)
+        subStress(i) = subStress(i) + DELTAX
+        subEqStress = calc_eqStress(hillParams,subStress)
+        dfds(i) = (subEqStress - eqStress)/DELTAX
+      END DO
       RETURN
       END SUBROUTINE calc_dfdS
-
-
-      SUBROUTINE calc_Principal(yldCPrime,yldCDbPrime,yldSPriPrime,
-     &   yldSPriDbPrime,STRESS)
-      INCLUDE 'ABA_PARAM.INC'
-      INTEGER i
-      DOUBLE PRECISION yldCPrime(6,6),yldCDbPrime(6,6),yldSPriPrime(3),
-     & yldSPriDbPrime(3),STRESS(6),yldT(6,6),yldSPrime(6),yldSDbPrime(6)
-      yldT(:,:) = 0.0D0
-      yldT(1:3,1:3) = -1.0D0
-      DO i=1,3
-        yldT(i,i) = 2.0D0
-        yldT(i+3,i+3) = 3.0D0
-      END DO
-      yldT(:,:) = yldT(:,:)/3.0D0
-      yldSPrime = MATMUL(yldCPrime,MATMUL(yldT,STRESS))
-      yldSDbPrime = MATMUL(yldCDbPrime,MATMUL(yldT,STRESS))
-      yldSPriPrime(:) = 0.0D0
-      yldSPriDbPrime(:) = 0.0D0
-      CALL SPRINC(yldSPrime,yldSPriPrime,1,3,3)
-      CALL SPRINC(yldSDbPrime,yldSPriDbPrime,1,3,3)
-      RETURN
-      END SUBROUTINE calc_Principal
 
 
       ! calculate inverse matrix
@@ -351,3 +319,39 @@
       END DO
       RETURN
       END SUBROUTINE calc_Dyad
+
+
+      ! calculate equivalent stress
+      DOUBLE PRECISION FUNCTION hill48(hillParams,STRESS)
+      IMPLICIT NONE
+      DOUBLE PRECISION hillParams(4),STRESS(6)
+      hill48 = hillParams(1)*(STRESS(2) - STRESS(3))**2 + 
+     & hillParams(2)*(STRESS(3)-STRESS(1))**2 + 
+     & hillParams(3)*(STRESS(1)-STRESS(2))**2 + 
+     & 2.0D0*hillParams(4)*SUM(STRESS(4:6)**2)
+      RETURN
+      END FUNCTION hill48
+
+
+      DOUBLE PRECISION FUNCTION hah(STRESS)
+      IMPLICIT NONE
+      INTEGER i
+      DOUBLE PRECISION STRESS(6),h(3,6),pPlus(3),pMinus(3)
+      h(:,:) = 0.0D0
+      h(1:3,1:3) = -0.25D0
+      DO i=1,3
+        h(i,i) = 0.5D0
+      END DO
+      pPlus(:) = 0.0D0
+      pMinus(:) = 0.0D0
+      hah = 0.0D0
+
+      DO i=1,3
+        hah = hah + 
+     &   pPlus(i)*ABS(DOT_PRODUCT(h(i,:),STRESS)-
+     &   ABS(DOT_PRODUCT(h(i,:),STRESS)))**2 + 
+     &   pMinus(i)*ABS(DOT_PRODUCT(h(i,:),STRESS)+
+     &   ABS(DOT_PRODUCT(h(i,:),STRESS)))**2
+      END DO
+      RETURN
+      END FUNCTION hah
