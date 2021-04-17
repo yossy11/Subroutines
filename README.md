@@ -32,7 +32,7 @@ UMAT を用いた Abaqus のサブルーチンを開発するリポジトリ
   降伏局面を描く処理を記述している。matplotlib の contour というメソッドを利用。
 - [identify_hill48_params.py](src_python/identify_hill48_params.py),
   [identify_yld2004_params.py](src_python/identify_yld2004_params.py)  
-  各降伏関数で利用する異方性パラメータを計算し、また各方向の降伏応力、r 値を計算する処理を記述。各方向の計算は[Barlat 氏の yld2004-18p に関する論文]("https://www.sciencedirect.com/science/article/abs/pii/S0749641904001160)の appendix を参考にしている。
+  各降伏関数で利用する異方性パラメータを計算し、また各方向の降伏応力、r 値を計算する処理を記述。各方向の計算は[Barlat 氏の yld2004-18p に関する論文](https://www.sciencedirect.com/science/article/abs/pii/S0749641904001160)の appendix を参考にしている。
 - その他のファイル  
   一応残しているだけで大した意味はないです。
 
@@ -42,7 +42,7 @@ UMAT を用いた Abaqus のサブルーチンを開発するリポジトリ
   subroutine を作成する上で base となる subroutine
 - [HardeningRules.for](src_fortran/HardeningRules.for)  
   硬化則についてその微分も併せて記述したファイル。subroutine を作成する際適宜コピーしてください。
-- [Lib.for](stc_fortran/Lib.for)  
+- [Lib.for](src_fortran/Lib.for)  
   数値計算を行う上で便利な関数を用意したもの
 - [test.for](src_fortran/test.for)  
   fortran77 の挙動を確認するために用意したもの。これをコンパイルするための Makefile も用意している。使い方は
