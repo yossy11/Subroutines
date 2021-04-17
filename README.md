@@ -2,21 +2,18 @@
 
 UMAT を用いた Abaqus のサブルーチンを開発するリポジトリ
 
-## Latest version
-
-2020/12/23
-
-- src/Yld2004SwiftNonAFRCCP.for
 
 ## Folder tree
+<pre>
+├─Datas                 各種パラメータを格納するフォルダ
+├─Images                matplotlibで作成した画像や各種画像の保存用
+├─src_fortran           fortran77ファイル
+└─src_python            pythonファイル
+</pre>
 
-- src/ => サブルーチンファイル
-- Rules.md => 実装する上で知っておくべきルール(fortran77,UMAT)
+## Python環境構築
+Dockerで
 
-## GraphVisualization
-
-Activate docker container and get into the shell.
-Type `jupyter notebook list` and you can see url with access token.
 
 ## ABAQUS documentation
 
